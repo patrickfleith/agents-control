@@ -20,9 +20,13 @@ git diff --staged   # staged
 
 Read the actual changes. List untracked files too (`git status --short` shows them as `??`).
 
+If the user named a subset to commit (specific files, or "just the auth work"), scope everything below to that subset and leave the rest untouched. Otherwise consider the whole tree.
+
 ## 2. Group into atomic commits
 
 Cluster the changes into the smallest units that each stand on their own (one logical change per commit). Split unrelated work apart; keep a change and its direct test/doc together.
+
+**Flag unfinished work.** While reading the diff, watch for changes that look incomplete or not meant to ship — e.g. `TODO`/`FIXME`/`XXX` added, commented-out or debug code (`print`, `console.log`, `dbg!`), stubs / empty function bodies / `pass` / `NotImplementedError`, half-edited files, failing or `.skip`ped tests, or a reference with no definition. List each one and **ask** whether to include it, hold it back (leave unstaged), or fix it first. Don't silently commit it.
 
 ## 3. Order foundation-first
 
@@ -71,6 +75,8 @@ Types: `feat` (new feature), `fix` (bug fix), `refactor`, `perf`, `test`, `docs`
 ## Rules
 
 - **Plan before committing.** Never commit without showing the sequence first.
+- **Subset is fine.** Commit only the changes the user asked for; leave everything else exactly as it was.
+- **Never commit unfinished work silently.** If something looks incomplete, ask first.
 - **Clean messages.** No agent attribution footer — write them as a human would.
 - **Never push.** Only `git push` if the user explicitly asks.
 - **Don't commit junk.** If a file looks like a secret, credential, or large build artifact, leave it unstaged and flag it.
