@@ -13,33 +13,26 @@ this is the whole mechanism, so keep it compact and current.
 
 ## Project docs
 
-Project docs live in `docs/` (feature docs under `docs/features/<slug>/`).
-Not all exist in every repo — the core set is created at setup, the rest are
-added on demand. If a doc doesn't exist yet, don't fabricate one — ask, or
-create it with the relevant skill.
+Project docs live in `docs/`. Consult the relevant one before acting. If a doc
+doesn't exist yet, don't fabricate one — create it with the skill noted below.
 
-| Doc          | Path                         | What it captures |
-|--------------|------------------------------|------------------|
-| Readme       | README.md                    | Entry point to the project. |
-| Product spec | docs/PRD.md                  | Product-level requirements, business context, user needs. |
-| Stack        | docs/STACK.md                | Frameworks, libraries, tools. |
-| Roadmap      | docs/ROADMAP.md              | Upcoming features, rework, fixes. |
-| Decisions    | docs/DECISIONS.md            | Pending (TBD) and settled decisions. |
-| Tasks        | docs/TASKS.md                | Repo-level todo dump. |
-| Changelog    | docs/CHANGELOG.md            | Notable changes per released version. |
-| Manual (SUM) | docs/SUM.md                  | Install + usage guide for end users. |
-| Glossary     | docs/GLOSSARY.md             | Canonical term definitions. |
-| Ideas        | docs/IDEAS.md                | Captured ideas / possibilities to explore. |
-| Concerns     | docs/CONCERNS.md             | Risks and concerns to investigate. |
-| Questions    | docs/QUESTIONS.md            | Open questions + answers once resolved. |
-| Evaluations  | docs/EVALUATIONS.md          | How AI/ML features are evaluated. |
-| Tests        | docs/TESTS.md                | Test guide for non-AI/ML parts. |
-| UX/UI        | docs/UXUI.md                 | UX/UI guidelines and rules. |
-| Feature spec | docs/features/<slug>/FRD.md  | Feature-level requirements. |
-| Impl plan    | docs/features/<slug>/PLAN.md | Multi-session implementation plan for a feature. |
+| Doc          | Path              | What it captures                        | Skill          |
+|--------------|-------------------|-----------------------------------------|----------------|
+| Manual (SUM) | docs/SUM.md       | Install + usage guide for end users.    | `write-manual` |
+| Decisions    | docs/DECISIONS.md | Pending (TBD) and settled decisions.    | `decide`       |
+| Glossary     | docs/GLOSSARY.md  | Canonical term definitions.             | `glossary`     |
+| Stack        | docs/STACK.md     | Frameworks, libraries, tools.           | `log`          |
+| Tasks        | docs/TASKS.md     | Repo-level todo dump.                   | `log`          |
+| Ideas        | docs/IDEAS.md     | Captured ideas / possibilities.         | `log`          |
+| Concerns     | docs/CONCERNS.md  | Risks and concerns to investigate.      | `log`          |
+| Questions    | docs/QUESTIONS.md | Open questions + answers once resolved. | `log`          |
 
 ## Capabilities
 
-Skills are auto-discovered from `.claude/skills/` — you don't document them here.
-Installed by the agents-control setup: `commit`, `log`, `decide`, `glossary`,
-`write-manual`.
+Skills are auto-discovered from `.claude/skills/`. Currently available:
+
+- `commit` — turn uncommitted work into atomic conventional commits.
+- `log` — append an entry to STACK, TASKS, IDEAS, CONCERNS, or QUESTIONS.
+- `decide` — record and manage decisions in DECISIONS.
+- `glossary` — add and refine canonical terms in GLOSSARY.
+- `write-manual` — write or update the SUM from the codebase.
