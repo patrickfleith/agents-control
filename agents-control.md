@@ -69,6 +69,7 @@ _Status added later — ✅ = file operations already implemented by a skill (sk
 - **DECISIONS** ✅ (`decide`) — Contains two broad sections: TBD (to be decided) with pending decisions, and then Decided. Captures meaningful decisions made over the course of the project (architecture decision, prioritization, tool, default value).
 - **UXUI** 🔴 — Optional. Contains guidelines and rules for maintaining a high bar for the user experience (even for a CLI tool) and user interface (best practices, rules, etc.).
 - **CHANGELOG** 🔴 — Should contain a chronological, human-readable list of notable changes made in each released version of the project.
+- **DEPLOYMENT** 🔴 — How the project is built, released, and run per environment: release steps, configuration/secrets, and rollback.
 
 ---
 
