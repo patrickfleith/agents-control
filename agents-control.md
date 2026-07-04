@@ -76,14 +76,14 @@ _Everything above is the original idea, kept verbatim. Everything below is the a
 
 ## Guiding principle
 
-The problem is not the number of doc types — it is that each doc lacks a defined **name/location**, **committed vs ignored** status, **write owner** (human or agent), and **agent permission** (read / append / create / never-touch). The fix is one **manifest** that pins these properties, plus commands that route work into the right file consistently. Instructions live in **one** file (`AGENTS.md`), with a thin Claude adapter — so the setup works in both Claude Code and Codex without maintaining two brains.
+The problem is not the number of docs — it is that each doc lacks a defined **name/location** and a clear **purpose** the agent can recognize on sight. The fix is one **manifest** that pins each doc's name, path, and what it's for, plus skills that route work into the right file consistently. Instructions live in **one** file (`AGENTS.md`), with a thin Claude adapter — so the setup works in both Claude Code and Codex without maintaining two brains.
 
 ## Two kinds of "awareness"
 
 | Kind | Examples | How the agent learns about it |
 |---|---|---|
 | **Capabilities** | skills, slash commands, subagents, hooks, MCP servers | **Auto-discovered by the tool.** Claude scans `.claude/skills`, `.claude/commands`, `.claude/agents`; Codex scans its own dirs. You never document these. |
-| **Docs (your markdown)** | PRD, STACK, TASKS, DECISIONS… | **NOT understood automatically.** The tool sees the file exists but not its meaning or permissions. **This is the only thing the manifest is for.** |
+| **Docs (your markdown)** | PRD, STACK, TASKS, DECISIONS… | **NOT understood automatically.** The tool sees the file exists but not what it's for. **This is the only thing the manifest is for.** |
 
 ## Awareness chain
 
@@ -96,12 +96,12 @@ CLAUDE.md  ──(@import)──▶ AGENTS.md ◀── read directly
                              │
                              ▼
                    [DOC MANIFEST section]
-              "here are the docs + rules for each"
+              "here are the docs + what each is for"
 ```
 
 - **Claude** always reads `CLAUDE.md` at startup → it is one line, `@AGENTS.md`, which pulls the whole file in.
 - **Codex** reads `AGENTS.md` directly at startup (open standard, also read by Cursor/Aider/Copilot).
-- Both therefore see the manifest **every session, automatically**. That *is* the mechanism — the file that's always loaded contains the rules.
+- Both therefore see the manifest **every session, automatically**. That *is* the mechanism — the file that's always loaded contains the manifest.
 
 ## Why there is no separate `INDEX.md`
 
@@ -118,43 +118,30 @@ docs/          ← the actual doc content, names fixed by the manifest
 .claude/       ← capabilities, auto-discovered (skills, commands, agents, hooks)
 ```
 
-## Doc types (plain meaning)
-
-Every doc is one of three types. The type defines who edits it and when:
-
-| Type | Plain meaning |
-|---|---|
-| **Reference** | You own it; it's the source of truth. The agent **reads** it and **asks before editing**. |
-| **Scratchpad** | Shared scratchpad the agent **updates freely** (tasks, decisions, ideas as they happen). |
-| **Private** | Your personal scratch; **gitignored**, never shared. |
-
 ## How the manifest looks (a section inside `AGENTS.md`)
+
+The manifest is a compact table: each doc's name, path, and what it captures — no
+permission or ownership columns. It tells the agent **which file holds what**, so
+it reads and routes work to the right place. Edit etiquette is handled by the
+skills and by the human staying in the loop, not by per-doc rules.
 
 ```markdown
 ## Project docs
 
-All project docs live in `docs/`. Before acting, consult the relevant doc.
-Treat each according to its type below.
+Project docs live in `docs/` (feature docs under `docs/features/<slug>/`).
+Not all exist in every repo — the core set is created at setup, the rest are
+added on demand. If a doc doesn't exist yet, don't fabricate one — ask, or
+create it with the relevant skill.
 
-| Doc            | Path                          | Type       | Agent may…                          |
-|----------------|-------------------------------|------------|-------------------------------------|
-| Product spec   | docs/PRD.md                   | Reference  | read; edit only if I ask            |
-| Tech stack     | docs/STACK.md                 | Reference  | read; edit only if I ask            |
-| Roadmap        | docs/ROADMAP.md               | Reference  | read; propose edits, await approval |
-| Decisions log  | docs/DECISIONS.md             | Scratchpad | append new decisions freely         |
-| Task dump      | docs/TASKS.md                 | Scratchpad | add/check off tasks freely          |
-| Changelog      | docs/CHANGELOG.md             | Reference  | update on release                   |
-| Feature specs  | docs/features/<slug>/FRD.md   | Reference  | create on request; read otherwise   |
-
-**Rules:**
-- Reference = human-owned source of truth. Read freely; never edit without explicit request.
-- Scratchpad = shared working notes. Append/update autonomously; keep entries dated + terse.
-- If a doc doesn't exist yet, don't fabricate one — ask or use /greenfield.
-- Code under `sandbox/**` is throwaway: skip it in reviews, no test/eval bar.
+| Doc          | Path              | What it captures                       |
+|--------------|-------------------|----------------------------------------|
+| Product spec | docs/PRD.md       | Product-level requirements & context.  |
+| Tech stack   | docs/STACK.md     | Frameworks, libraries, tools.          |
+| Roadmap      | docs/ROADMAP.md   | Upcoming features, rework, fixes.      |
+| Decisions    | docs/DECISIONS.md | Pending (TBD) and settled decisions.   |
+| Tasks        | docs/TASKS.md     | Repo-level todo dump.                  |
+| Changelog    | docs/CHANGELOG.md | Notable changes per released version.  |
+| …            | …                 | (one row per doc — full set in the template) |
 ```
 
 Strategy: **Claude first, Codex later.** The shared core (`AGENTS.md` + manifest + `docs/`) is portable today; capabilities are ported per-tool as needed.
-
-## Open decision
-
-Manifest permissions are enforced by **instruction**, not hard-blocked. To make "edit Reference docs only on request" a genuine guardrail, add a **PreToolUse hook** that blocks writes to `docs/*` unless approved. _Pending: instruction-level trust vs. hard hook enforcement._
