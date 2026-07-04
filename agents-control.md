@@ -50,23 +50,25 @@ Distinguish between throwaway vs production code.
 
 ## A set of human-friendly readable markdown files
 
-- **README** — Entry point to the project.
-- **SUM** — Software and User Manual covering installation guide, quickstart, and detailed usage guide per feature.
-- **PRD** — Product Requirement Document describes the requirements at product level. Also contains high-level business context and motivation, user needs, etc.
-- **STACK** — Project-level stack (frameworks, libraries, etc.).
-- **ROADMAP** — Describes the overall project roadmap: upcoming features, things to work on, rework, improve, fix.
-- **FRD** — Feature Requirement Document describes the requirements at feature level.
-- **PLAN** — For difficult features, we may need an implementation plan. It is narrower than the roadmap as it targets a specific slice of the roadmap, but made to carry info across multiple sessions.
-- **GLOSSARY** — Definition of the terms, disambiguated words, and how to interpret terms in the context of a given project.
-- **IDEAS** — A set of ideas that needs to be captured before we forget them, a question to myself of a possibility, an investigation.
-- **CONCERNS** — A set of concerns about the project, product, feature which might need to be investigated, or be helpful to capture to relate to bugs.
-- **EVALUATIONS** — Specific for AI/ML projects. Describes how the product / features are evaluated.
-- **TESTS** — Test Guide for traditional tests, the kind of tests that cover non-AI/ML parts.
-- **QUESTIONS** — Questions (not decisions) that I may need to find an answer to (by doing some research, asking a colleague, etc.) that relate to some piece of the work (future work, ongoing or past implementation). Includes the answer once it was answered.
-- **TASKS** — At repo level, dump your todos here; avoids having to bloat the context by looking up issues for small things.
-- **DECISIONS** — Contains two broad sections: TBD (to be decided) with pending decisions, and then Decided. Captures meaningful decisions made over the course of the project (architecture decision, prioritization, tool, default value).
-- **UXUI** — Optional. Contains guidelines and rules for maintaining a high bar for the user experience (even for a CLI tool) and user interface (best practices, rules, etc.).
-- **CHANGELOG** — Should contain a chronological, human-readable list of notable changes made in each released version of the project.
+_Status added later — ✅ = file operations already implemented by a skill (skill named) · 🚧 = template may exist, but no skill handles it yet._
+
+- **README** 🚧 — Entry point to the project.
+- **SUM** ✅ (`write-manual`) — Software and User Manual covering installation guide, quickstart, and detailed usage guide per feature.
+- **PRD** 🚧 — Product Requirement Document describes the requirements at product level. Also contains high-level business context and motivation, user needs, etc.
+- **STACK** ✅ (`log`) — Project-level stack (frameworks, libraries, etc.).
+- **ROADMAP** 🚧 — Describes the overall project roadmap: upcoming features, things to work on, rework, improve, fix.
+- **FRD** 🚧 — Feature Requirement Document describes the requirements at feature level.
+- **PLAN** 🚧 — For difficult features, we may need an implementation plan. It is narrower than the roadmap as it targets a specific slice of the roadmap, but made to carry info across multiple sessions.
+- **GLOSSARY** ✅ (`glossary`) — Definition of the terms, disambiguated words, and how to interpret terms in the context of a given project.
+- **IDEAS** ✅ (`log`) — A set of ideas that needs to be captured before we forget them, a question to myself of a possibility, an investigation.
+- **CONCERNS** ✅ (`log`) — A set of concerns about the project, product, feature which might need to be investigated, or be helpful to capture to relate to bugs.
+- **EVALUATIONS** 🚧 — Specific for AI/ML projects. Describes how the product / features are evaluated.
+- **TESTS** 🚧 — Test Guide for traditional tests, the kind of tests that cover non-AI/ML parts.
+- **QUESTIONS** ✅ (`log`) — Questions (not decisions) that I may need to find an answer to (by doing some research, asking a colleague, etc.) that relate to some piece of the work (future work, ongoing or past implementation). Includes the answer once it was answered.
+- **TASKS** ✅ (`log`) — At repo level, dump your todos here; avoids having to bloat the context by looking up issues for small things.
+- **DECISIONS** ✅ (`decide`) — Contains two broad sections: TBD (to be decided) with pending decisions, and then Decided. Captures meaningful decisions made over the course of the project (architecture decision, prioritization, tool, default value).
+- **UXUI** 🚧 — Optional. Contains guidelines and rules for maintaining a high bar for the user experience (even for a CLI tool) and user interface (best practices, rules, etc.).
+- **CHANGELOG** 🚧 — Should contain a chronological, human-readable list of notable changes made in each released version of the project.
 
 ---
 
