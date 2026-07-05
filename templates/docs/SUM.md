@@ -1,5 +1,21 @@
 # <Software> — User Manual
 
+<!-- Contents: navigation map for humans and AI tools. Keep in sync with the
+     headings below — the write-manual skill regenerates it after every edit. -->
+
+## Contents
+
+- [1. Overview](#1-overview) — what it is and who it's for
+- [2. Quickstart](#2-quickstart) — fastest path to a working result
+- [3. Requirements](#3-requirements) — platforms, runtime, required services
+- [4. Installation](#4-installation) — install, configure, verify
+- [5. Usage](#5-usage) — usage model and per-feature guides
+  - [Feature: <name>](#feature-name) — <one line: what it does>
+  - [Feature: <name>](#feature-name) — <one line: what it does>
+- [6. Configuration & Security](#6-configuration--security) — config keys, secrets, secure setup
+- [7. Troubleshooting](#7-troubleshooting) — errors → cause → fix, logs, recovery
+- [8. Reference](#8-reference) — full command/config/env/error tables
+
 ## 1. Overview
 
 What it is, who it's for, and the key capabilities — 3 to 5 lines. State the
@@ -26,13 +42,12 @@ quick check to confirm it worked.
 
 ## 5. Usage
 
-Overall usage model first, then per feature:
+Overall usage model first, then one subsection per feature (each becomes a
+Contents entry):
 
-<details><summary>Feature: &lt;name&gt;</summary>
+### Feature: <name>
 
 What it does, how to use it, an example, and available options.
-
-</details>
 
 ## 6. Configuration & Security *(optional — omit if not applicable)*
 
