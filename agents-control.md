@@ -52,6 +52,12 @@ Distinguish between throwaway vs production code.
 
 _Status added later — ✅ = file operations already implemented by a skill (skill named) · 🚧 = partial (e.g. `log` can append entries, but a dedicated skill to **manage** them is still needed) · 🔴 = not started (no skill yet)._
 
+At product Level we have:
+- PRD + ROADMAP
+
+At feature level we have:
+- FRD + PLAN
+
 - **README** 🔴 — Entry point to the project.
 - **SUM** ✅ (`write-manual`) — Software and User Manual covering installation guide, quickstart, and detailed usage guide per feature.
 - **PRD** 🔴 — Product Requirement Document describes the requirements at product level. Also contains high-level business context and motivation, user needs, etc.
