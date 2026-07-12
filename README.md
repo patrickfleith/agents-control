@@ -11,10 +11,10 @@ what — plus skills that route work into the right file. See
 The whole system is **3 files + a folder**:
 
 ```
-AGENTS.md   ← agent instructions + the doc manifest (the brain)
-CLAUDE.md   ← one line, "@AGENTS.md" (Claude adapter; Codex reads AGENTS.md directly)
-docs/       ← the actual doc content (PRD, STACK, ROADMAP, DECISIONS, …)
-.claude/    ← skills, auto-discovered by the tool
+AGENTS.md    ← agent instructions + the doc manifest (the brain)
+CLAUDE.md    ← one line, "@AGENTS.md" (Claude adapter; Codex reads AGENTS.md directly)
+docs-agents/ ← the actual doc content (PRD, STACK, ROADMAP, DECISIONS, …)
+.claude/     ← skills, auto-discovered by the tool
 ```
 
 ## Quickstart
@@ -69,7 +69,7 @@ scaffold everything upfront.
 ## Development status
 
 Early / MVP. **Claude first, Codex later** — the shared core (`AGENTS.md` +
-manifest + `docs/`) is portable today; per-tool capabilities are ported as
+manifest + `docs-agents/`) is portable today; per-tool capabilities are ported as
 needed.
 
 Doc coverage (✅ = a skill handles file ops · 🚧 = partial, needs a manage skill · 🔴 = not started):

@@ -1,13 +1,13 @@
 ---
 name: agents-control
-description: Set up the agents-control system in the current repo — fetches the toolkit from GitHub (patrickfleith/agents-control), installs the doc-maintenance skills, scaffolds docs/ from templates, and generates the AGENTS.md manifest + CLAUDE.md adapter. Use when the user says "set up agents-control", "bootstrap this repo", "scaffold the agent docs", or "init agents-control here".
+description: Set up the agents-control system in the current repo — fetches the toolkit from GitHub (patrickfleith/agents-control), installs the doc-maintenance skills, scaffolds docs-agents/ from templates, and generates the AGENTS.md manifest + CLAUDE.md adapter. Use when the user says "set up agents-control", "bootstrap this repo", "scaffold the agent docs", or "init agents-control here".
 disable-model-invocation: true
 ---
 
 # agents-control (setup)
 
 Bring the **current repo** under the agents-control system: the "3 files + a
-folder" layout (`AGENTS.md` + `CLAUDE.md` + `docs/` + `.claude/skills/`), with a
+folder" layout (`AGENTS.md` + `CLAUDE.md` + `docs-agents/` + `.claude/skills/`), with a
 correctly filled manifest. The user stays in control — show what you'll do, do
 it, then report. Never overwrite existing files silently.
 
@@ -36,7 +36,8 @@ If `curl` fails, fall back to `git clone --depth 1 https://github.com/patrickfle
 
 - **Brownfield** — code already present. Read enough of it to fill `STACK.md`
   (detected language/frameworks/test runner) and to write an accurate one-liner
-  in `AGENTS.md`. Preserve any existing `README.md`/`docs/`.
+  in `AGENTS.md`. Preserve any existing `README.md` and the repo's own `docs/`
+  (agents-control writes to `docs-agents/`, never the repo's `docs/`).
 - **Greenfield** — empty/near-empty repo. Ask the user 2–3 quick questions
   (what is this, who's it for) to seed `README.md` and `AGENTS.md`.
 
@@ -45,10 +46,10 @@ If `curl` fails, fall back to `git clone --depth 1 https://github.com/patrickfle
 Use no-clobber (`cp -n`) everywhere so existing files survive.
 
 ```bash
-mkdir -p .claude/skills docs
+mkdir -p .claude/skills docs-agents
 cp -Rn "$SRC/.claude/skills/." .claude/skills/            # commit, log, decide, glossary, write-manual
 for d in PRD STACK ROADMAP DECISIONS TASKS CHANGELOG; do  # MVP core only
-  cp -n "$SRC/templates/docs/$d.md" "docs/$d.md"
+  cp -n "$SRC/templates/docs-agents/$d.md" "docs-agents/$d.md"
 done
 [ -f README.md ] || cp -n "$SRC/templates/README.md" README.md
 cp -n "$SRC/templates/AGENTS.md" AGENTS.md

@@ -114,7 +114,7 @@ CLAUDE.md  ──(@import)──▶ AGENTS.md ◀── read directly
 
 ## Why there is no separate `INDEX.md`
 
-Claude can follow `@docs/INDEX.md` imports, but **Codex does not follow `@path` imports** — it only concatenates `AGENTS.md` files. A separate manifest file would therefore be invisible to Codex. So the manifest lives as a **section inside `AGENTS.md`** (compact table, always loaded, cross-tool safe). A human-facing table of contents, if ever wanted, is just a section in the README — not part of the agent's awareness path.
+Claude can follow `@docs-agents/INDEX.md` imports, but **Codex does not follow `@path` imports** — it only concatenates `AGENTS.md` files. A separate manifest file would therefore be invisible to Codex. So the manifest lives as a **section inside `AGENTS.md`** (compact table, always loaded, cross-tool safe). A human-facing table of contents, if ever wanted, is just a section in the README — not part of the agent's awareness path.
 
 **MVP core (start lean, create the rest on demand):** README · PRD · STACK · ROADMAP · DECISIONS · TASKS · CHANGELOG.
 
@@ -123,7 +123,7 @@ Claude can follow `@docs/INDEX.md` imports, but **Codex does not follow `@path` 
 ```
 AGENTS.md      ← instructions + the manifest table (the brain)
 CLAUDE.md      ← one line: "@AGENTS.md"            (Claude adapter)
-docs/          ← the actual doc content, names fixed by the manifest
+docs-agents/   ← the actual doc content, names fixed by the manifest
 .claude/       ← capabilities, auto-discovered (skills, commands, agents, hooks)
 ```
 
@@ -137,20 +137,20 @@ skills and by the human staying in the loop, not by per-doc rules.
 ```markdown
 ## Project docs
 
-Project docs live in `docs/` (feature docs under `docs/features/<slug>/`).
+Project docs live in `docs-agents/` (feature docs under `docs-agents/features/<slug>/`).
 Not all exist in every repo — the core set is created at setup, the rest are
 added on demand. If a doc doesn't exist yet, don't fabricate one — ask, or
 create it with the relevant skill.
 
-| Doc          | Path              | What it captures                       |
-|--------------|-------------------|----------------------------------------|
-| Product spec | docs/PRD.md       | Product-level requirements & context.  |
-| Tech stack   | docs/STACK.md     | Frameworks, libraries, tools.          |
-| Roadmap      | docs/ROADMAP.md   | Upcoming features, rework, fixes.      |
-| Decisions    | docs/DECISIONS.md | Pending (TBD) and settled decisions.   |
-| Tasks        | docs/TASKS.md     | Repo-level todo dump.                  |
-| Changelog    | docs/CHANGELOG.md | Notable changes per released version.  |
-| …            | …                 | (one row per doc — full set in the template) |
+| Doc          | Path                     | What it captures                             |
+|--------------|--------------------------|----------------------------------------------|
+| Product spec | docs-agents/PRD.md       | Product-level requirements & context.        |
+| Tech stack   | docs-agents/STACK.md     | Frameworks, libraries, tools.                |
+| Roadmap      | docs-agents/ROADMAP.md   | Upcoming features, rework, fixes.            |
+| Decisions    | docs-agents/DECISIONS.md | Pending (TBD) and settled decisions.         |
+| Tasks        | docs-agents/TASKS.md     | Repo-level todo dump.                        |
+| Changelog    | docs-agents/CHANGELOG.md | Notable changes per released version.        |
+| …            | …                        | (one row per doc — full set in the template) |
 ```
 
-Strategy: **Claude first, Codex later.** The shared core (`AGENTS.md` + manifest + `docs/`) is portable today; capabilities are ported per-tool as needed.
+Strategy: **Claude first, Codex later.** The shared core (`AGENTS.md` + manifest + `docs-agents/`) is portable today; capabilities are ported per-tool as needed.

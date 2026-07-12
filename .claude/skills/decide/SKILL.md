@@ -1,16 +1,16 @@
 ---
 name: decide
-description: Record decisions in docs/DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
+description: Record decisions in docs-agents/DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
 disable-model-invocation: true
 ---
 
 # decide
 
-Maintains `docs/DECISIONS.md`. Keep entries terse.
+Maintains `docs-agents/DECISIONS.md`. Keep entries terse.
 
 ## Locate the file
 
-Edit `docs/DECISIONS.md` in the current project. If it doesn't exist, create it with this structure:
+Edit `docs-agents/DECISIONS.md` in the current project. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Decisions
@@ -34,7 +34,7 @@ Date: YYYY-MM-DD HH:MM
 ## Modes
 
 **1. Add a TBD** (open question requiring a decision to move forward, not yet decided). 
-Not to be confused with an open question from `docs/QUESTIONS.md` which do not related to decision.
+Not to be confused with an open question from `docs-agents/QUESTIONS.md` which do not related to decision.
 Append to the `## TBD` list:
 ```
 - **<Shortname> — <pending decision>** — options/context in one line.

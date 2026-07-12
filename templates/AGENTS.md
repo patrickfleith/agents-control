@@ -13,19 +13,19 @@ this is the whole mechanism, so keep it compact and current.
 
 ## Project docs
 
-Project docs live in `docs/`. Consult the relevant one before acting. If a doc
+Project docs live in `docs-agents/`. Consult the relevant one before acting. If a doc
 doesn't exist yet, don't fabricate one — create it with the skill noted below.
 
-| Doc          | Path              | What it captures                        | Skill          |
-|--------------|-------------------|-----------------------------------------|----------------|
-| Manual (SUM) | docs/SUM.md       | Install + usage guide for end users.    | `write-manual` |
-| Decisions    | docs/DECISIONS.md | Pending (TBD) and settled decisions.    | `decide`       |
-| Glossary     | docs/GLOSSARY.md  | Canonical term definitions.             | `glossary`     |
-| Stack        | docs/STACK.md     | Frameworks, libraries, tools.           | `log`          |
-| Tasks        | docs/TASKS.md     | Repo-level todo dump.                   | `log`          |
-| Ideas        | docs/IDEAS.md     | Captured ideas / possibilities.         | `log`          |
-| Concerns     | docs/CONCERNS.md  | Risks and concerns to investigate.      | `log`          |
-| Questions    | docs/QUESTIONS.md | Open questions + answers once resolved. | `log`          |
+| Doc          | Path                     | What it captures                        | Skill          |
+|--------------|--------------------------|-----------------------------------------|----------------|
+| Manual (SUM) | docs-agents/SUM.md       | Install + usage guide for end users.    | `write-manual` |
+| Decisions    | docs-agents/DECISIONS.md | Pending (TBD) and settled decisions.    | `decide`       |
+| Glossary     | docs-agents/GLOSSARY.md  | Canonical term definitions.             | `glossary`     |
+| Stack        | docs-agents/STACK.md     | Frameworks, libraries, tools.           | `log`          |
+| Tasks        | docs-agents/TASKS.md     | Repo-level todo dump.                   | `log`          |
+| Ideas        | docs-agents/IDEAS.md     | Captured ideas / possibilities.         | `log`          |
+| Concerns     | docs-agents/CONCERNS.md  | Risks and concerns to investigate.      | `log`          |
+| Questions    | docs-agents/QUESTIONS.md | Open questions + answers once resolved. | `log`          |
 
 ## Capabilities
 

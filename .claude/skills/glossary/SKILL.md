@@ -1,16 +1,16 @@
 ---
 name: glossary
-description: Manage docs/GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
+description: Manage docs-agents/GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
 disable-model-invocation: true
 ---
 
 # glossary
 
-Maintains `docs/GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
+Maintains `docs-agents/GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
 
 ## Locate the file
 
-Edit `docs/GLOSSARY.md`. If it doesn't exist, create it with this structure:
+Edit `docs-agents/GLOSSARY.md`. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Glossary

@@ -13,8 +13,8 @@
 
 ## Where to go next
 
-- [SUM](docs/SUM.md) — install & full usage
-- [ROADMAP](docs/ROADMAP.md) — what's next
+- [SUM](docs-agents/SUM.md) — install & full usage
+- [ROADMAP](docs-agents/ROADMAP.md) — what's next
 
 <details><summary>More (badges, links, license)</summary>
 
