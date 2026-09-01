@@ -6,7 +6,7 @@ one-line `CLAUDE.md` adapter (`@AGENTS.md`). Keep it compact and current.
 
 ## How to work here
 
-- **What this is:** <one line — what this project is and who it's for>.
+- **What this is:** <one line: what this project is and who it's for>.
 - Before acting, consult the relevant project doc below.
 - Keep changes minimal and in the style of the surrounding code.
 
@@ -17,14 +17,14 @@ docs, commit messages, PR text. Read it before you write.
 
 ## Project docs
 
-Project docs live in `docs-agents/`. Consult the relevant one before acting. If a doc
-doesn't exist yet, don't fabricate one — create it with the skill noted below.
+Project docs live in `docs-agents/`. Consult the relevant one before acting. If a
+doc does not exist yet, do not fabricate one. Create it with the skill noted below.
 
 | Doc          | Path                     | What it captures                        | Skill          |
 |--------------|--------------------------|-----------------------------------------|----------------|
 | Manual (SUM) | docs-agents/SUM.md       | Install + usage guide for end users.    | `write-manual` |
 | Decisions    | docs-agents/DECISIONS.md | Pending (TBD) and settled decisions.    | `decide`       |
-| Glossary     | docs-agents/GLOSSARY.md  | Canonical term definitions.             | `glossary`     |
+| Glossary     | docs-agents/GLOSSARY.md  | Agreed term definitions.                | `glossary`     |
 | Stack        | docs-agents/STACK.md     | Frameworks, libraries, tools.           | `log`          |
 | Tasks        | docs-agents/TASKS.md     | Repo-level todo dump.                   | `log`          |
 | Ideas        | docs-agents/IDEAS.md     | Captured ideas / possibilities.         | `log`          |
@@ -38,13 +38,13 @@ cloud sessions use the same workflows. Codex and Cursor discover that directory
 natively; `.claude/skills/` is a **generated** adapter for Claude Code, which
 reads only its own path.
 
-Never edit `.claude/skills/` by hand — write the skill in `.agents/skills/` and
+Never edit `.claude/skills/` by hand. Write the skill in `.agents/skills/` and
 run `agents-control adapters`. Invoke a skill as `/name` in Claude Code, `$name`
 in Codex, or by asking for it in Cursor. Currently available:
 
-- `commit` — turn uncommitted work into atomic conventional commits.
-- `log` — append an entry to STACK, TASKS, IDEAS, CONCERNS, or QUESTIONS.
-- `decide` — record and manage decisions in DECISIONS.
-- `glossary` — add and refine canonical terms in GLOSSARY.
-- `write-manual` — write or update the SUM from the codebase.
-- `unslop` — writing rules for anything an agent writes. Always applies.
+- `commit`: turn uncommitted work into atomic conventional commits.
+- `log`: append an entry to STACK, TASKS, IDEAS, CONCERNS, or QUESTIONS.
+- `decide`: record and manage decisions in DECISIONS.
+- `glossary`: add and refine agreed terms in GLOSSARY.
+- `write-manual`: write or update the SUM from the codebase.
+- `unslop`: writing rules for anything an agent writes. Always applies.
