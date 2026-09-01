@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # macos is where symlink mode is exercised on a case-insensitive
+    # filesystem; ubuntu is what Codex cloud checkouts run on.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell syntax
+        run: |
+          sh -n install.sh
+          sh -n bin/agents-control
+          sh -n tests/test-install.sh
+
+      - name: Skill portability
+        # Skills must stay inside the Agent Skills spec frontmatter, or they
+        # work in Claude Code and are silently ignored by Codex and Cursor.
+        run: ./bin/agents-control doctor --skills-only --strict
+
+      - name: End-to-end
+        run: sh tests/test-install.sh
