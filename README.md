@@ -204,7 +204,18 @@ The mode is decided on the machine that runs `init`. If a symlink-mode repo is
 later cloned somewhere symlinks don't work, `doctor` reports the broken adapters
 and `agents-control adapters --mode=copy` converts the repo for everyone.
 
-## Project docs
+## Doc types and coverage
+
+Docs sit at two levels:
+
+- **Product level** — **PRD** (what the product is, for whom, and why) and
+  **ROADMAP** (what's coming). One of each per repo, in `docs-agents/`.
+- **Feature level** — **FRD** (requirements for one feature) and **PLAN** (how
+  to build it, when a feature is big enough to need a plan that survives across
+  sessions). One set per feature, in `docs-agents/features/<slug>/`.
+
+Everything else is repo-level: STACK, DECISIONS, TASKS, GLOSSARY, CHANGELOG and
+the rest live directly in `docs-agents/`.
 
 **MVP core, created at setup:** README · PRD · STACK · ROADMAP · DECISIONS ·
 TASKS · CHANGELOG. Everything else is created **on demand** by the skills — you
