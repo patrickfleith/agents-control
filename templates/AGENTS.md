@@ -1,9 +1,8 @@
 # AGENTS.md
 
-Instructions for AI coding agents (Claude Code, Codex, and any tool that reads
-`AGENTS.md`) working in this repo. Claude loads it via `@AGENTS.md` in
-`CLAUDE.md`; other tools read this file directly. It is loaded every session —
-this is the whole mechanism, so keep it compact and current.
+Instructions for AI coding agents working in this repo. Codex and Cursor read
+this file directly, Codex cloud tasks included. Claude Code reads it through the
+one-line `CLAUDE.md` adapter (`@AGENTS.md`). Keep it compact and current.
 
 ## How to work here
 
@@ -29,7 +28,14 @@ doesn't exist yet, don't fabricate one — create it with the skill noted below.
 
 ## Capabilities
 
-Skills are auto-discovered from `.claude/skills/`. Currently available:
+Skills live in `.agents/skills/`, committed with the repository so local and
+cloud sessions use the same workflows. Codex and Cursor discover that directory
+natively; `.claude/skills/` is a **generated** adapter for Claude Code, which
+reads only its own path.
+
+Never edit `.claude/skills/` by hand — write the skill in `.agents/skills/` and
+run `agents-control adapters`. Invoke a skill as `/name` in Claude Code, `$name`
+in Codex, or by asking for it in Cursor. Currently available:
 
 - `commit` — turn uncommitted work into atomic conventional commits.
 - `log` — append an entry to STACK, TASKS, IDEAS, CONCERNS, or QUESTIONS.
