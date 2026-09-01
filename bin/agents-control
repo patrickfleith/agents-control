@@ -1,0 +1,498 @@
+#!/bin/sh
+# agents-control — set up and maintain the agents-control system in a repo.
+# POSIX sh; needs only git and coreutils.
+set -eu
+
+REPO_SLUG="patrickfleith/agents-control"
+WORKFLOW_SKILLS="commit log decide glossary write-manual"
+CORE_DOCS="PRD STACK ROADMAP DECISIONS TASKS CHANGELOG"
+# Frontmatter keys the Agent Skills spec allows. Anything else is a
+# tool-specific extension that the other tools silently ignore.
+SPEC_KEYS="name description license compatibility metadata allowed-tools"
+
+STATE_FILE=".agents/agents-control.json"
+MANAGED_FILE=".claude/skills/.agents-control-managed"
+
+WARNINGS=0
+
+# ---------------------------------------------------------------- output
+
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  B=$(printf '\033[1m'); R=$(printf '\033[0m')
+  RED=$(printf '\033[31m'); YEL=$(printf '\033[33m'); GRN=$(printf '\033[32m')
+else
+  B=''; R=''; RED=''; YEL=''; GRN=''
+fi
+
+info() { printf '%s\n' "$*"; }
+step() { printf '%s%s%s\n' "$B" "$*" "$R"; }
+ok()   { printf '  %s+%s %s\n' "$GRN" "$R" "$*"; }
+skip() { printf '  . %s\n' "$*"; }
+warn() { printf '  %s!%s %s\n' "$YEL" "$R" "$*" >&2; WARNINGS=$((WARNINGS + 1)); }
+die()  { printf '%serror:%s %s\n' "$RED" "$R" "$*" >&2; exit 1; }
+
+# ---------------------------------------------------------------- paths
+
+# Resolve a path through symlinks. `readlink -f` is GNU-only, and the
+# launcher on PATH is itself a symlink into the toolkit checkout.
+resolve_path() {
+  _p=$1
+  _n=0
+  while [ -L "$_p" ]; do
+    _n=$((_n + 1))
+    if [ "$_n" -gt 40 ]; then die "symlink loop resolving $1"; fi
+    _target=$(readlink "$_p")
+    case $_target in
+      /*) _p=$_target ;;
+      *)  _p=$(dirname "$_p")/$_target ;;
+    esac
+  done
+  _dir=$(cd "$(dirname "$_p")" && pwd -P)
+  printf '%s/%s\n' "$_dir" "$(basename "$_p")"
+}
+
+SELF=$(resolve_path "$0")
+TOOLKIT_ROOT=$(dirname "$(dirname "$SELF")")
+
+if [ ! -d "$TOOLKIT_ROOT/templates" ] || [ ! -d "$TOOLKIT_ROOT/.agents/skills" ]; then
+  die "toolkit files not found at $TOOLKIT_ROOT (expected templates/ and .agents/skills/)"
+fi
+
+toolkit_version() {
+  if [ -f "$TOOLKIT_ROOT/.agents-control-version" ]; then
+    cat "$TOOLKIT_ROOT/.agents-control-version"
+  elif git -C "$TOOLKIT_ROOT" rev-parse --short HEAD >/dev/null 2>&1; then
+    git -C "$TOOLKIT_ROOT" rev-parse --short HEAD
+  else
+    printf 'unknown\n'
+  fi
+}
+
+# ---------------------------------------------------------------- guards
+
+require_repo() {
+  if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
+    die "not a git repository. Run 'git init' first — agents-control files are committed with your repo."
+  fi
+  REPO_ROOT=$(git rev-parse --show-toplevel)
+  cd "$REPO_ROOT"
+}
+
+refuse_toolkit_repo() {
+  if git remote -v 2>/dev/null | grep -q "$REPO_SLUG"; then
+    die "this is the agents-control toolkit itself — it is the source, not a target."
+  fi
+}
+
+# ---------------------------------------------------------------- helpers
+
+# discard PATH — remove a file, symlink or directory tree.
+discard() { rm -r -f "$1"; }
+
+# copy_if_absent SRC DEST LABEL
+copy_if_absent() {
+  if [ -e "$2" ]; then
+    skip "$3 already exists — left alone"
+  else
+    mkdir -p "$(dirname "$2")"
+    cp -R "$1" "$2"
+    ok "$3"
+  fi
+}
+
+# frontmatter_value FILE KEY — one top-level YAML value, empty if absent.
+frontmatter_value() {
+  awk -v key="$2" '
+    NR == 1 && $0 != "---" { exit }
+    NR == 1 { next }
+    $0 == "---" { exit }
+    {
+      i = index($0, ":")
+      if (i > 0 && substr($0, 1, i - 1) == key) {
+        v = substr($0, i + 1)
+        sub(/^[ \t]+/, "", v); sub(/[ \t]+$/, "", v)
+        print v; exit
+      }
+    }
+  ' "$1"
+}
+
+# frontmatter_keys FILE — every top-level YAML key.
+frontmatter_keys() {
+  awk '
+    NR == 1 && $0 != "---" { exit }
+    NR == 1 { next }
+    $0 == "---" { exit }
+    /^[A-Za-z][A-Za-z0-9_-]*:/ { i = index($0, ":"); print substr($0, 1, i - 1) }
+  ' "$1"
+}
+
+skill_names() {
+  if [ ! -d .agents/skills ]; then return 0; fi
+  for d in .agents/skills/*/; do
+    if [ -d "$d" ]; then basename "$d"; fi
+  done
+}
+
+count_lines() {
+  if [ -z "$1" ]; then printf '0\n'; else printf '%s\n' "$1" | wc -l | tr -d ' '; fi
+}
+
+# ---------------------------------------------------------------- adapters
+
+# How .claude/skills entries get materialised. Symlinks keep one source of
+# truth; copies are the fallback where the filesystem or git config cannot
+# represent a link — notably Windows checkouts with core.symlinks=false.
+#
+# Order matters: an explicit --mode wins, then the mode this repo is already
+# in. Without that second rule a repo deliberately kept in copy mode for
+# Windows teammates would flip back to symlinks the next time someone on
+# macOS regenerated its adapters.
+detect_mode() {
+  if [ -n "${MODE_OVERRIDE:-}" ]; then
+    printf '%s\n' "$MODE_OVERRIDE"
+    return 0
+  fi
+  _recorded=$(current_mode)
+  if [ -n "$_recorded" ]; then
+    printf '%s\n' "$_recorded"
+    return 0
+  fi
+  if [ "$(git config --get core.symlinks 2>/dev/null || echo true)" = "false" ]; then
+    printf 'copy\n'
+    return 0
+  fi
+  _probe=".agents-control-symlink-probe.$$"
+  if ln -s . "$_probe" 2>/dev/null; then
+    rm -f "$_probe"
+    printf 'symlink\n'
+  else
+    rm -f "$_probe" 2>/dev/null || true
+    printf 'copy\n'
+  fi
+}
+
+# The mode this repo is actually in, from state, else from what is on disk.
+current_mode() {
+  _m=''
+  if [ -f "$STATE_FILE" ]; then
+    _m=$(sed -n 's/.*"adapter_mode"[ ]*:[ ]*"\([a-z]*\)".*/\1/p' "$STATE_FILE" | head -1)
+  fi
+  if [ -z "$_m" ]; then
+    # No state file — a repo set up before this was recorded. Infer from the
+    # first adapter that actually exists; absent adapters say nothing, so a
+    # fresh repo correctly falls through to probing the filesystem.
+    for name in $(skill_names); do
+      _entry=".claude/skills/$name"
+      if [ -L "$_entry" ]; then _m=symlink; break; fi
+      if [ -d "$_entry" ]; then _m=copy; break; fi
+    done
+  fi
+  printf '%s\n' "${_m:-}"
+}
+
+cmd_adapters() {
+  require_repo
+
+  # Migrate the legacy layout: Claude Code documents following a symlinked
+  # *skill entry*, not a symlinked skills directory.
+  if [ -L .claude/skills ]; then
+    rm -f .claude/skills
+    warn "replaced the legacy .claude/skills directory symlink with per-skill entries"
+  fi
+
+  _names=$(skill_names)
+  if [ -z "$_names" ]; then
+    die "no skills in .agents/skills/ — run 'agents-control init' first."
+  fi
+
+  MODE=$(detect_mode)
+  mkdir -p .claude/skills
+
+  # Drop entries from a previous run so renamed or removed skills don't linger.
+  if [ -f "$MANAGED_FILE" ]; then
+    while IFS= read -r old; do
+      if [ -z "$old" ]; then continue; fi
+      case " $(printf '%s' "$_names" | tr '\n' ' ') " in
+        *" $old "*) ;;
+        *) discard ".claude/skills/$old"; ok "removed stale adapter $old" ;;
+      esac
+    done < "$MANAGED_FILE"
+  fi
+
+  : > "$MANAGED_FILE"
+  for name in $_names; do
+    printf '%s\n' "$name" >> "$MANAGED_FILE"
+    target=".claude/skills/$name"
+    discard "$target"
+    if [ "$MODE" = symlink ]; then
+      ln -s "../../.agents/skills/$name" "$target"
+    else
+      cp -R ".agents/skills/$name" "$target"
+    fi
+  done
+
+  ok "$(count_lines "$_names") Claude Code adapters in .claude/skills/ (mode: $MODE)"
+  write_state
+}
+
+write_state() {
+  mkdir -p .agents
+  {
+    printf '{\n'
+    printf '  "toolkit_version": "%s",\n' "$(toolkit_version)"
+    printf '  "adapter_mode": "%s",\n' "${MODE:-symlink}"
+    printf '  "skills": ['
+    _first=1
+    for name in $(skill_names); do
+      if [ "$_first" != 1 ]; then printf ', '; fi
+      printf '"%s"' "$name"
+      _first=0
+    done
+    printf ']\n'
+    printf '}\n'
+  } > "$STATE_FILE"
+}
+
+# ---------------------------------------------------------------- init
+
+cmd_init() {
+  require_repo
+  refuse_toolkit_repo
+
+  step "Scaffolding agents-control in $REPO_ROOT"
+  printf '\n'
+
+  step "Skills"
+  mkdir -p .agents/skills
+  for name in $WORKFLOW_SKILLS; do
+    copy_if_absent "$TOOLKIT_ROOT/.agents/skills/$name" ".agents/skills/$name" ".agents/skills/$name/"
+  done
+
+  step "Docs"
+  mkdir -p docs-agents
+  for doc in $CORE_DOCS; do
+    copy_if_absent "$TOOLKIT_ROOT/templates/docs-agents/$doc.md" "docs-agents/$doc.md" "docs-agents/$doc.md"
+  done
+  # README is part of the MVP core. A brownfield repo already has one and
+  # copy_if_absent leaves it alone; a greenfield repo gets the stub.
+  copy_if_absent "$TOOLKIT_ROOT/templates/README.md" README.md "README.md"
+
+  step "Instructions"
+  copy_if_absent "$TOOLKIT_ROOT/templates/AGENTS.md" AGENTS.md "AGENTS.md"
+  if [ -e CLAUDE.md ]; then
+    if grep -q '^@AGENTS\.md[[:space:]]*$' CLAUDE.md; then
+      skip "CLAUDE.md already imports AGENTS.md"
+    else
+      warn "CLAUDE.md exists but does not import AGENTS.md — add '@AGENTS.md' as its first line, or Claude Code never sees the manifest"
+    fi
+  else
+    printf '@AGENTS.md\n' > CLAUDE.md
+    ok "CLAUDE.md (imports AGENTS.md)"
+  fi
+
+  step "Adapters"
+  cmd_adapters
+
+  printf '\n'
+  step "Next"
+  info "  Ask your agent to finish the setup — it writes the project description,"
+  info "  fills STACK.md from your code, and prunes the doc manifest:"
+  info ""
+  info "    Claude Code   /agents-control"
+  info "    Codex         \$agents-control"
+  info "    Cursor        \"finish the agents-control setup\""
+  info ""
+  info "  Then commit .agents/, .claude/, AGENTS.md, CLAUDE.md and docs-agents/ —"
+  info "  cloud sessions read the skills from your checked-out repository."
+  info ""
+  info "  'agents-control doctor' shows what each tool will discover."
+}
+
+# ---------------------------------------------------------------- doctor
+
+check_skill_portability() {
+  for name in $(skill_names); do
+    f=".agents/skills/$name/SKILL.md"
+    if [ ! -f "$f" ]; then
+      warn "$name: no SKILL.md"
+      continue
+    fi
+    fname=$(frontmatter_value "$f" name)
+    if [ -z "$fname" ]; then
+      warn "$name: SKILL.md frontmatter has no 'name'"
+    elif [ "$fname" != "$name" ]; then
+      warn "$name: frontmatter name is '$fname' but the directory is '$name' — they must match"
+    fi
+    if [ -z "$(frontmatter_value "$f" description)" ]; then
+      warn "$name: SKILL.md has no 'description' — no tool can tell when to load it"
+    fi
+    case $name in
+      *[!a-z0-9-]*) warn "$name: skill names must be lowercase letters, digits and hyphens" ;;
+    esac
+    for key in $(frontmatter_keys "$f"); do
+      case " $SPEC_KEYS " in
+        *" $key "*) ;;
+        *) warn "$name: frontmatter key '$key' is outside the Agent Skills spec — Codex and Cursor ignore it" ;;
+      esac
+    done
+  done
+}
+
+cmd_doctor() {
+  require_repo
+
+  _names=$(skill_names)
+  n_agents=$(count_lines "$_names")
+  n_claude=0
+  if [ -d .claude/skills ]; then
+    for d in .claude/skills/*/; do
+      if [ -d "$d" ] && [ -f "$d/SKILL.md" ]; then n_claude=$((n_claude + 1)); fi
+    done
+  fi
+
+  agents_md="MISSING"
+  if [ -f AGENTS.md ]; then agents_md="AGENTS.md"; fi
+  claude_md="MISSING"
+  if [ -f CLAUDE.md ]; then
+    if grep -q '^@AGENTS\.md[[:space:]]*$' CLAUDE.md; then
+      claude_md="CLAUDE.md -> AGENTS.md"
+    else
+      claude_md="CLAUDE.md (no import)"
+    fi
+  fi
+
+  step "What each tool will see in $REPO_ROOT"
+  printf '\n'
+  printf '  %-13s %-24s %s\n' "TOOL" "INSTRUCTIONS" "SKILLS"
+  printf '  %-13s %-24s %s\n' "Claude Code" "$claude_md" "$n_claude from .claude/skills/"
+  printf '  %-13s %-24s %s\n' "Codex" "$agents_md" "$n_agents from .agents/skills/"
+  printf '  %-13s %-24s %s\n' "Cursor" "$agents_md" "$n_agents from .agents/skills/"
+  printf '\n'
+  step "Checks"
+
+  # --skills-only lints just the skills, for a repo that ships skills without
+  # being under agents-control itself — the toolkit's own CI, for instance.
+  if [ -z "${SKILLS_ONLY:-}" ]; then
+    if [ ! -f AGENTS.md ]; then
+      warn "no AGENTS.md — Codex and Cursor get no instructions and no doc manifest"
+    fi
+    if [ ! -f CLAUDE.md ]; then
+      warn "no CLAUDE.md — Claude Code reads CLAUDE.md, never AGENTS.md"
+    elif ! grep -q '^@AGENTS\.md[[:space:]]*$' CLAUDE.md; then
+      warn "CLAUDE.md does not import AGENTS.md — add '@AGENTS.md' as a line of its own"
+    fi
+    if [ ! -d docs-agents ]; then
+      warn "no docs-agents/ — the manifest points at files that do not exist"
+    fi
+  fi
+  if [ -L .claude/skills ]; then
+    warn ".claude/skills is a directory symlink — Claude Code documents per-skill symlinks only. Run 'agents-control adapters'."
+  fi
+
+  for name in $_names; do
+    entry=".claude/skills/$name"
+    if [ ! -e "$entry" ]; then
+      if [ -L "$entry" ]; then
+        warn "$name: .claude/skills/$name is a broken symlink — Claude Code cannot load it. On a checkout that cannot hold symlinks, run 'agents-control adapters --mode=copy'."
+      else
+        warn "$name: no Claude Code adapter — run 'agents-control adapters'"
+      fi
+    elif [ ! -L "$entry" ] && [ -d "$entry" ]; then
+      if ! cmp -s ".agents/skills/$name/SKILL.md" "$entry/SKILL.md" 2>/dev/null; then
+        warn "$name: the copied adapter has drifted from .agents/skills/$name — run 'agents-control adapters'"
+      fi
+    fi
+  done
+
+  check_skill_portability
+
+  printf '\n'
+  if [ "$WARNINGS" -eq 0 ]; then
+    ok "no problems found"
+    return 0
+  fi
+  printf '  %s%s warning(s)%s\n' "$YEL" "$WARNINGS" "$R"
+  if [ -n "${STRICT:-}" ]; then exit 1; fi
+  return 0
+}
+
+# ---------------------------------------------------------------- update
+
+cmd_update() {
+  require_repo
+  refuse_toolkit_repo
+
+  step "Refreshing skills from toolkit $(toolkit_version)"
+  for name in $(skill_names); do
+    src="$TOOLKIT_ROOT/.agents/skills/$name"
+    if [ ! -d "$src" ]; then
+      skip "$name — not from the toolkit, left alone"
+    elif cmp -s "$src/SKILL.md" ".agents/skills/$name/SKILL.md"; then
+      skip "$name — already current"
+    elif [ -n "${FORCE:-}" ]; then
+      discard ".agents/skills/$name"
+      cp -R "$src" ".agents/skills/$name"
+      ok "$name — updated"
+    else
+      warn "$name — modified locally, left alone (--force overwrites)"
+    fi
+  done
+
+  step "Adapters"
+  cmd_adapters
+
+  printf '\n'
+  info "docs-agents/ and your AGENTS.md prose were not touched."
+}
+
+# ---------------------------------------------------------------- entry
+
+usage() {
+  cat <<'USAGE'
+agents-control — one context system across Claude Code, Codex and Cursor.
+
+Usage: agents-control <command> [options]
+
+Commands:
+  init          Scaffold this repo: skills, docs, AGENTS.md, CLAUDE.md, adapters.
+  adapters      Regenerate the Claude Code adapters in .claude/skills/.
+                Re-run after adding or renaming a skill.
+  doctor        Report what each tool will discover, and flag problems.
+  update        Refresh toolkit skills in this repo; never touches your docs.
+  version       Print the toolkit version.
+
+Options:
+  --mode=symlink|copy   Force how adapters are materialised (init, adapters).
+  --force               Overwrite locally modified skills (update).
+  --strict              Exit non-zero if doctor reports any warning.
+  --skills-only         Lint only the skills, not AGENTS.md/docs (doctor).
+
+Skills are invoked as /name in Claude Code, $name in Codex, and by asking
+for them in plain language in Cursor.
+USAGE
+}
+
+CMD=${1:-help}
+if [ $# -gt 0 ]; then shift; fi
+
+for arg in "$@"; do
+  case $arg in
+    --mode=symlink|--mode=copy) MODE_OVERRIDE=${arg#--mode=} ;;
+    --force)       FORCE=1 ;;
+    --strict)      STRICT=1 ;;
+    --skills-only) SKILLS_ONLY=1 ;;
+    -h|--help)     usage; exit 0 ;;
+    *) die "unknown option: $arg" ;;
+  esac
+done
+
+case $CMD in
+  init)     cmd_init ;;
+  adapters) cmd_adapters ;;
+  doctor)   cmd_doctor ;;
+  update)   cmd_update ;;
+  version)  toolkit_version ;;
+  help|-h|--help) usage ;;
+  *) usage >&2; die "unknown command: $CMD" ;;
+esac
