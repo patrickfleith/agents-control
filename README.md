@@ -54,6 +54,7 @@ the docs with the bundled skills:
 | `decide`       | Record and manage decisions in DECISIONS.                |
 | `glossary`     | Add and refine canonical terms in GLOSSARY.              |
 | `write-manual` | Write or update the user manual (SUM) from the codebase. |
+| `unslop`       | Writing rules for anything an agent writes.              |
 
 Invoke them as `/name` in Claude Code, `$name` in Codex, or by asking in plain
 language in Cursor.
@@ -186,9 +187,9 @@ Code accepts and the others ignore.
 
 ```
   TOOL          INSTRUCTIONS             SKILLS
-  Claude Code   CLAUDE.md -> AGENTS.md   5 from .claude/skills/
-  Codex         AGENTS.md                5 from .agents/skills/
-  Cursor        AGENTS.md                5 from .agents/skills/
+  Claude Code   CLAUDE.md -> AGENTS.md   6 from .claude/skills/
+  Codex         AGENTS.md                6 from .agents/skills/
+  Cursor        AGENTS.md                6 from .agents/skills/
 ```
 
 Add `--strict` to make it exit non-zero — useful in CI.

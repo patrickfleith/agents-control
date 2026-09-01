@@ -4,7 +4,7 @@
 set -eu
 
 REPO_SLUG="patrickfleith/agents-control"
-WORKFLOW_SKILLS="commit log decide glossary write-manual"
+WORKFLOW_SKILLS="commit log decide glossary write-manual unslop"
 CORE_DOCS="PRD STACK ROADMAP DECISIONS TASKS CHANGELOG"
 # Frontmatter keys the Agent Skills spec allows. Anything else is a
 # tool-specific extension that the other tools silently ignore.
