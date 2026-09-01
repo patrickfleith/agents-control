@@ -87,7 +87,7 @@ else
   fail "CLAUDE.md does not import AGENTS.md"
 fi
 
-for s in commit log decide glossary write-manual; do
+for s in commit log decide glossary write-manual unslop; do
   assert_file "$REPO/.agents/skills/$s/SKILL.md" "skill $s installed"
 done
 for d in PRD STACK ROADMAP DECISIONS TASKS CHANGELOG; do

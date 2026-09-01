@@ -10,6 +10,11 @@ one-line `CLAUDE.md` adapter (`@AGENTS.md`). Keep it compact and current.
 - Before acting, consult the relevant project doc below.
 - Keep changes minimal and in the style of the surrounding code.
 
+## Writing rules
+
+Everything you write follows `.agents/skills/unslop/SKILL.md`: answers in chat,
+docs, commit messages, PR text. Read it before you write.
+
 ## Project docs
 
 Project docs live in `docs-agents/`. Consult the relevant one before acting. If a doc
@@ -42,3 +47,4 @@ in Codex, or by asking for it in Cursor. Currently available:
 - `decide` — record and manage decisions in DECISIONS.
 - `glossary` — add and refine canonical terms in GLOSSARY.
 - `write-manual` — write or update the SUM from the codebase.
+- `unslop` — writing rules for anything an agent writes. Always applies.
