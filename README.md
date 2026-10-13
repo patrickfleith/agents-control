@@ -226,29 +226,26 @@ up what you will not use.
 Status: ✅ a skill handles file operations · 🚧 partial, `log` can append but a
 dedicated *manage* skill is still needed · 🔴 template exists, no skill yet.
 
-| Doc         | Status | Skill          |
-|-------------|--------|----------------|
-| SUM         | ✅     | `write-manual` |
-| DECISIONS   | ✅     | `decide`       |
-| GLOSSARY    | ✅     | `glossary`     |
-| IDEAS       | ✅     | `log`          |
-| CONCERNS    | ✅     | `log`          |
-| STACK       | 🚧     | `log`          |
-| TASKS       | 🚧     | `log`          |
-| QUESTIONS   | 🚧     | `log`          |
-| README      | 🔴     | none           |
-| PRD         | 🔴     | none           |
-| ROADMAP     | 🔴     | none           |
-| FRD         | 🔴     | none           |
-| PLAN        | 🔴     | none           |
-| EVALUATIONS | 🔴     | none           |
-| TESTS       | 🔴     | none           |
-| CHANGELOG   | 🔴     | none           |
-| UXUI        | 🔴     | none           |
-| DEPLOYMENT  | 🔴     | none           |
-
-[`agents-control-initial-idea.md`](agents-control-initial-idea.md) describes what
-each doc is for.
+| Doc | What it holds | Status | Skill |
+|---|---|---|---|
+| README | Entry point to the project. | 🔴 | none |
+| SUM | Software and user manual: installation, quickstart, usage per feature. | ✅ | `write-manual` |
+| PRD | Requirements at product level, plus business context, motivation, user needs. | 🔴 | none |
+| STACK | Project-level stack: frameworks, libraries, tools. | 🚧 | `log` |
+| ROADMAP | What is coming: upcoming features, rework, improvements, fixes. | 🔴 | none |
+| FRD | Requirements for one feature. | 🔴 | none |
+| PLAN | How to build one hard feature, carried across sessions. Narrower than the roadmap. | 🔴 | none |
+| GLOSSARY | Agreed terms, disambiguated words, how to read them in this project. | ✅ | `glossary` |
+| IDEAS | Ideas worth capturing before you forget them: a possibility, an investigation. | ✅ | `log` |
+| CONCERNS | Concerns about the project, product or feature, often the seed of a bug report. | ✅ | `log` |
+| EVALUATIONS | For AI/ML projects: how the product and its features are evaluated. | 🔴 | none |
+| TESTS | Test guide for the non-AI/ML parts. | 🔴 | none |
+| QUESTIONS | Questions to answer by research or by asking someone, with the answer once found. | 🚧 | `log` |
+| TASKS | Repo-level todo dump, so small things never become issues. | 🚧 | `log` |
+| DECISIONS | Two sections: TBD for pending, Decided for settled. Architecture, priorities, tools, defaults. | ✅ | `decide` |
+| UXUI | Optional. Guidelines for holding a high bar on user experience and interface, CLI included. | 🔴 | none |
+| CHANGELOG | Chronological, human-readable list of notable changes per released version. | 🔴 | none |
+| DEPLOYMENT | How the project is built, released and run per environment: steps, config, secrets, rollback. | 🔴 | none |
 
 ## Development status
 
