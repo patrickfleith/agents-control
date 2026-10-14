@@ -1,24 +1,16 @@
 ---
-name: glossary
-description: Manage GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
+name: ac-glossary
+description: Define, refine or audit project terms in private agents-control docs. Use when the user asks for ac-glossary or to manage terms with agents-control.
 ---
 
 # glossary
 
-## Resolve destinations first
+## Private documents
 
-If the repository has `.agents-control/context.sh`, call it with `sh`.
-Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
-Resolve the concrete path and visibility before editing; never assume a docs folder.
-Use `--scope=private` or `--scope=shared` when the request establishes its audience.
-An invalid configuration or unavailable private workspace stops the write.
-
-For new material, run `resolve GLOSSARY` with an explicit scope if needed.
-For an existing entry, use `resolve GLOSSARY --read` and find it in the returned
-files. Keep edits in the containing file. Ask if identifiers or headings match
-multiple files. Unclassified legacy entries need an explicit migration destination
-before editing. Do not recreate content that was moved to shared storage.
-
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
 
 Maintains `GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
 

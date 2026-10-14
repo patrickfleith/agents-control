@@ -1,24 +1,16 @@
 ---
-name: decide
-description: Record decisions in DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
+name: ac-decide
+description: Record, revise or revoke a personal project decision in private agents-control docs. Use when the user asks for ac-decide or to record a decision with agents-control.
 ---
 
 # decide
 
-## Resolve destinations first
+## Private documents
 
-If the repository has `.agents-control/context.sh`, call it with `sh`.
-Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
-Resolve the concrete path and visibility before editing; never assume a docs folder.
-Use `--scope=private` or `--scope=shared` when the request establishes its audience.
-An invalid configuration or unavailable private workspace stops the write.
-
-For new material, run `resolve DECISIONS` with an explicit scope if needed.
-For an existing entry, use `resolve DECISIONS --read` and find it in the returned
-files. Keep edits in the containing file. Ask if identifiers or headings match
-multiple files. Unclassified legacy entries need an explicit migration destination
-before editing. Do not recreate content that was moved to shared storage.
-
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
 
 Maintains `DECISIONS.md`. Keep entries terse.
 
@@ -55,7 +47,7 @@ Append to the `## TBD` list:
 ```
 
 **2. Log a decided decision**
-- Use `resolve DECISIONS --read` and find the highest `DEC-NNN` across returned files. New id = highest + 1, zero-padded to 3 digits. This avoids reusing IDs after sharing.
+- Read DECISIONS.md and find the highest `DEC-NNN`. New id = highest + 1, zero-padded to 3 digits.
 - Prepend the new entry to the top of `## Decided` (newest first).
 - Get the timestamp by running `date "+%Y-%m-%d %H:%M"`.
 - If it resolves a `## TBD` item, remove that TBD line.

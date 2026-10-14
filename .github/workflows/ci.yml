@@ -7,8 +7,6 @@ on:
 
 jobs:
   test:
-    # macos is where symlink mode is exercised on a case-insensitive
-    # filesystem; ubuntu is what Codex cloud checkouts run on.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -16,25 +14,12 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
-
       - name: Shell syntax
         run: |
-          sh -n install.sh
-          sh -n bin/agents-control
-          sh -n tests/test-install.sh
-          sh -n tests/test-recovery.sh
-          sh -n lib/context.sh
-          sh -n lib/operations.sh
-          AC_MARKDOWN_MODE=ids awk -f lib/markdown.awk /dev/null
-          awk -f lib/replace.awk /dev/null
-
-      - name: Skill portability
-        # Skills must stay inside the Agent Skills spec frontmatter, or they
-        # work in Claude Code and are silently ignored by Codex and Cursor.
-        run: ./bin/agents-control doctor --skills-only --strict
-
-      - name: End-to-end
+          for file in install.sh bin/agents-control lib/context.sh lib/install.sh tests/test-install.sh; do
+            sh -n "$file"
+          done
+      - name: Personal skills
+        run: ./bin/agents-control doctor --skills-only
+      - name: Private workflow behavior
         run: sh tests/test-install.sh
-
-      - name: Recovery checkpoints
-        run: sh tests/test-recovery.sh

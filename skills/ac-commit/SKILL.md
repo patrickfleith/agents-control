@@ -1,25 +1,16 @@
 ---
-name: commit
-description: Turn uncommitted work into a logically ordered sequence of atomic conventional commits. Surveys the whole working tree, groups changes, orders them foundation-first, shows a plan, then commits by path. Use when the user says "commit this", "commit my work", "split this into commits", or "clean up my changes into commits"
+name: ac-commit
+description: Organize uncommitted work into atomic conventional commits and guard private agents-control docs. Use when the user asks for ac-commit.
 ---
 
 # commit
 
-## Resolve destinations first
+## Protect private notes
 
-If the repository has `.agents-control/context.sh`, call it with `sh`.
-Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
-Resolve the concrete path and visibility before editing; never assume a docs folder.
-Use `--scope=private` or `--scope=shared` when the request establishes its audience.
-An invalid configuration or unavailable private workspace stops the write.
-
-Before each commit, run `sh .agents-control/context.sh guard-index` when the
-shared helper exists, otherwise `agents-control guard-index` when the CLI is
-available. Check the complete staged tree, including work staged before this
-invocation. Stop on indexed private content; preserve the user's index. Allow
-explicit staged deletions that remove private files from tracking. Never bypass
-this check because a file appears in Git exclusions.
-
+Run `agents-control context` once. Before every commit, run
+`agents-control guard-index`. Stop if private files are in the index and preserve
+the user's staging. Stage only the requested code and shared project files.
+Never stage docs-agents-private/ or bypass the guard with forced staging.
 
 Take the current uncommitted work and commit it as a clean, ordered sequence of atomic commits — each self-consistent, each a conventional-commit.
 

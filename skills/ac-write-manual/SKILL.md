@@ -1,28 +1,16 @@
 ---
-name: write-manual
-description: Write or update SUM.md — the Software User Manual — from the codebase. Mode 1 (generate) builds a full, detailed SUM from scratch by inventorying every user-facing surface so nothing is missed. Mode 2 (update) revises the SUM against a PR/diff, removing what's obsolete, editing what changed, and adding what's new — precisely and concisely. Triggered by "write the manual", "generate the user manual", "document how to use this", or "update the manual for this PR".
+name: ac-write-manual
+description: Write or update the private SUM.md user manual from the codebase. Use when the user asks for ac-write-manual or a private manual with agents-control.
 ---
 
 # write-manual
 
-## Resolve destinations first
+## Private documents
 
-If the repository has `.agents-control/context.sh`, call it with `sh`.
-Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
-Resolve the concrete path and visibility before editing; never assume a docs folder.
-Use `--scope=private` or `--scope=shared` when the request establishes its audience.
-An invalid configuration or unavailable private workspace stops the write.
-
-For new material, run `resolve SUM` with an explicit scope if needed.
-For an existing entry, use `resolve SUM --read` and find it in the returned
-files. Keep edits in the containing file. Ask if identifiers or headings match
-multiple files. Unclassified legacy entries need an explicit migration destination
-before editing. Do not recreate content that was moved to shared storage.
-
-Resolve each context document separately, including GLOSSARY, PRD, and CHANGELOG.
-Read the bundled `assets/SUM.md` relative to this SKILL.md file, regardless of
-whether the skill was loaded from the toolkit, a personal installation, or a clone.
-
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
 
 Maintains `SUM.md` — the end-user manual: how to install and use the software correctly. Follows the template in `assets/SUM.md` beside this skill: a **Contents** map up top, then 9 sections (§6–8 optional). This is a **user** manual, not a design doc — no internals, architecture, or rationale.
 
@@ -92,7 +80,7 @@ Goal: bring the SUM back in sync with reality **precisely and concisely** — to
 - **No blind spots (Mode 1):** inventory before drafting; every surface is covered or consciously dropped.
 - **Surgical (Mode 2):** change only what the diff changed; don't rewrite stable sections.
 - **Contents never goes stale.** After any edit, the `## Contents` map must match the document's headings exactly (right entries, right order, working anchors, one feature per `### Feature:` subsection). Regenerate it — this is required even in surgical Mode 2.
-- **Glossary is law.** Use canonical terms; if the code reveals a user-facing concept the glossary is missing, flag it (suggest running `glossary`), don't coin a term silently.
+- **Glossary is law.** Use canonical terms; if the code reveals a user-facing concept the glossary is missing, flag it (suggest running `ac-glossary`), don't coin a term silently.
 - **Concise.** Fit the template; every example should be copy-pasteable. Cut prose that doesn't help a user act.
 - **Verify examples exist.** Don't invent commands, flags, or endpoints — cite ones that are actually in the code.
 - **Omit empty optional sections.** §6–8 carry `*(optional)*`; delete rather than pad.

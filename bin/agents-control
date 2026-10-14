@@ -1,5 +1,4 @@
 #!/bin/sh
-# Private workspaces and portable team context. POSIX shell, Git, basic utilities.
 set -eu
 SELF=$0
 while [ -L "$SELF" ]; do
@@ -7,694 +6,118 @@ while [ -L "$SELF" ]; do
   case $target in /*) SELF=$target ;; *) SELF=$(dirname "$SELF")/$target ;; esac
 done
 TOOLKIT_ROOT=$(cd "$(dirname "$SELF")/.." && pwd -P)
-AC_CONTEXT_LIBRARY=1
 . "$TOOLKIT_ROOT/lib/context.sh"
-. "$TOOLKIT_ROOT/lib/operations.sh"
-
 usage() {
   cat <<'DOC'
-agents-control: private working material and shared project knowledge.
+agents-control: private notes for your coding agents.
 
-Usage: agents-control COMMAND [arguments] [options]
+  init              Create docs-agents-private/ and exclude it from Git.
+  context           Print personal instructions for this checkout. Read-only.
+  resolve DOC       Print a private document path. Does not create the document.
+                    --read prints existing contents; --path also means path only.
+  guard-index       Refuse private files in the Git index before a commit.
+  doctor            Check this checkout. --skills-only checks toolkit sources.
+  version           Print the installed version.
 
-  init       Set up this worktree; defaults to private.
-  context    Print registered personal guidance. Read-only.
-  resolve DOC [--scope=private|shared] [--read] [--path]
-             Resolve a new write, or list existing read locations.
-  guard-index
-             Refuse private content anywhere in the complete Git index.
-  adapters   Refresh owned Claude adapters for team skills.
-  update     Refresh unedited, owned team toolkit artifacts.
-  doctor     Inspect configuration, tracking, instructions, skills, adapters.
-  share SOURCE --to=DOC [--section=HEADING] [--merge]
-             Preview moving private content to the shared folder.
-  migrate    Preview mode/path changes and explicit document moves.
-  recover --resume|--restore
-             Recover the last operation without overwriting newer edits.
-  version    Print installed toolkit version.
-
-Setup and migration:
-  --profile=private|selected|team
-  --private-dir=PATH           Private workspace root; docs are in PATH/docs.
-  --shared-dir=PATH            Repo-relative shared folder.
-  --shared-docs="PRD STACK ..." Override destination defaults; optional docs stay on demand.
-  --team-tasks                 Enable the shared team TASKS list.
-  --mode=copy|symlink          Adapter representation. New shared adapters use copies.
-  --attach=ID                 Explicitly reattach an existing personal registration.
-
-Content selection:
-  --doc=DOC:private|shared     Repeat for whole documents during migration.
-  --from=private|shared|legacy Resolve ambiguous source locations.
-  --section=HEADING           One exact ATX heading; requires one selected document.
-  --adopt                     Explicitly adopt/replace uncertain generated artifacts.
-
-Share, migrate, and explicit adoption preview by default.
-Init, update, and adapters apply safe generated changes directly.
-  --apply --expect=TOKEN       Apply the exact preview if inputs are unchanged.
-  --strict                    Fail doctor when it reports warnings.
-  --skills-only               Check toolkit skill portability only.
-
-IDEAS, CONCERNS, QUESTIONS default to private. Setup agents ask which should be
-shared and whether team tasks are wanted, then pass --shared-docs/--team-tasks.
-No command stages, commits, or pushes. Previously shared content remains in Git history.
+Run init once per checkout. No profiles or configuration required.
 DOC
 }
-version() {
-  if [ -f "$TOOLKIT_ROOT/.agents-control-version" ]; then cat "$TOOLKIT_ROOT/.agents-control-version"
-  else git -C "$TOOLKIT_ROOT" rev-parse --short HEAD 2>/dev/null || printf 'development\n'; fi
-}
-refuse_toolkit() {
-  if [ "$AC_REPO" = "$TOOLKIT_ROOT" ] || git remote -v | grep -q 'patrickfleith/agents-control'; then
-    ac_die "the toolkit is a source, not a setup target"
+init() {
+  ac_safe_path "$AC_EXCLUDE"
+  if ac_exists "$AC_EXCLUDE" && [ ! -f "$AC_EXCLUDE" ]; then ac_die 'Git exclude must be a regular file'; fi
+  # Exclusions are common to linked worktrees. Refuse tracked content in any of them.
+  ac_worktrees=$(git -C "$AC_REPO" worktree list --porcelain) || ac_die 'cannot list worktrees'
+  printf '%s\n' "$ac_worktrees" | while IFS= read -r line; do
+    case $line in worktree\ *)
+      checkout=${line#worktree }
+      ac_text_path "$checkout"
+      [ -d "$checkout" ] || continue
+      indexed=$(git -C "$checkout" ls-files -- ':(icase,literal)docs-agents-private') || ac_die 'cannot check worktree index'
+      [ -z "$indexed" ] || ac_die "docs-agents-private is tracked in $checkout; setup cannot hide project files"
+      ;; esac
+  done
+  for doc in AGENTS $AC_CORE; do
+    ac_safe_path "$AC_PRIVATE/$doc.md"
+    if ac_exists "$AC_PRIVATE/$doc.md" && [ ! -f "$AC_PRIVATE/$doc.md" ]; then ac_die "document is not a regular file: $doc.md"; fi
+  done
+  if [ -f "$AC_PRIVATE/AGENTS.md" ] && ! ac_registered; then
+    ac_die 'existing docs-agents-private/AGENTS.md is not agents-control guidance; move it aside before setup'
   fi
-}
-planned() {
-  AC_LOOKUP=$1 awk -F '\t' '
-    $2==ENVIRON["AC_LOOKUP"] || ($3=="D" && $5!="missing" && index(ENVIRON["AC_LOOKUP"],$2 "/")==1) {found=1}
-    END {exit !found}' "$AC_ITEMS"
-}
-ensure_doc() {
-  if ! ac_exists "$1" && ! planned "$1"; then ac_plan "$1" "$TOOLKIT_ROOT/templates/docs-agents/$2.md" F content; fi
-}
-replace_reference() {
-  final_newline=$(tail -c 1 "$1" | wc -l | tr -d ' ')
-  AC_REPLACE_OLD=$2 AC_REPLACE_NEW=$3 AC_FINAL_NEWLINE=$final_newline \
-    awk -f "$TOOLKIT_ROOT/lib/replace.awk" "$1"
-}
-team_owner() {
-  AC_OWNER_FILE=$AC_REPO/.agents-control/managed.tsv
-  AC_OWNER_ROOT=$AC_REPO
-  AC_OWNER_PORTABLE=1
-  ac_owner_init
-}
-personal_owner() {
-  AC_OWNER_FILE=$AC_REGISTRY/state/managed.tsv
-  AC_OWNER_ROOT=$AC_REGISTRY
-  AC_OWNER_PORTABLE=
-  ac_owner_init
-}
-manifest() (
-  scope=$1
-  printf '<!-- agents-control:start -->\n## Agents-control documents\n\n'
-  printf 'Use the resolver before writing. New entries follow defaults; existing entries stay in their current file.\n'
-  if [ "$scope" = shared ]; then
-    printf 'Run: sh .agents-control/context.sh resolve DOC [--scope=private|shared] [--read]\n'
-    printf 'Private paths are supplied only by registered personal context.\n\n'
-    printf '| Doc | Shared path | Purpose |\n| --- | --- | --- |\n'
-    printf '| README | README.md | Project entry point |\n'
-    for doc in $TEAM_DOCS; do
-      [ "$doc" != README ] || continue
-      rel=$(ac_doc "$doc")
-      case $doc in
-        PRD) purpose='Product requirements and context' ;; STACK) purpose='Tools and libraries in use' ;;
-        ROADMAP) purpose='Upcoming work' ;; DECISIONS) purpose='Open and settled decisions' ;;
-        CHANGELOG) purpose='Released changes' ;; SUM) purpose='Installation and usage' ;;
-        GLOSSARY) purpose='Agreed terms' ;; EVALUATIONS) purpose='AI evaluation guide' ;;
-        TESTS) purpose='Test guide' ;; UXUI) purpose='Interface guidelines' ;;
-        DEPLOYMENT) purpose='Release and operations guide' ;; TASKS) purpose='Team tasks' ;;
-        IDEAS) purpose='Ideas to consider' ;; CONCERNS) purpose='Risks to investigate' ;;
-        QUESTIONS) purpose='Questions and answers' ;; *) purpose='Feature requirements or plan' ;;
-      esac
-      display_path=$(printf '%s/%s' "$SHARED_REL" "$rel" | sed 's/|/\\|/g')
-      printf '| %s | %s | %s |\n' "$doc" "$display_path" "$purpose"
-    done
-    printf '\nRead .agents/skills/unslop/SKILL.md for writing rules.\n'
-  else
-    printf 'Run: agents-control resolve DOC [--scope=private|shared] [--read]\n'
-    printf 'Private docs: %s/docs\n' "$AC_PRIVATE"
-    printf 'Personal workflows: ac-commit, ac-log, ac-decide, ac-glossary, ac-write-manual, ac-unslop.\n'
+  # Append a literal root rule locally. Existing exclusions stay intact.
+  if ! grep -Fxq '/docs-agents-private/' "$AC_EXCLUDE" 2>/dev/null ||
+     ! git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/; then
+    mkdir -p "$(dirname "$AC_EXCLUDE")"
+    printf '\n# Private agents-control documents\n/docs-agents-private/\n' >> "$AC_EXCLUDE"
   fi
-  printf 'Only create optional docs when needed. Do not publish private material as a fallback.\n'
-  printf '<!-- agents-control:end -->\n'
-)
-personal_config() {
-  printf 'schema=1\nrepo_root=%s\nprofile=%s\nprivate_dir=%s\nshared_dir=%s\nshared_docs=%s\n' \
-    "$AC_REPO" "$PROFILE" "$AC_PRIVATE" "$SHARED_REL" "$SELECTED_DOCS"
+  git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/ || ac_die 'Git does not exclude private documents'
+  mkdir -p "$AC_PRIVATE"
+  for doc in $AC_CORE; do
+    [ -f "$AC_PRIVATE/$doc.md" ] || cp "$TOOLKIT_ROOT/templates/docs-agents/$doc.md" "$AC_PRIVATE/$doc.md"
+  done
+  # Write the setup marker last. Rerunning completes an interrupted setup.
+  [ -f "$AC_PRIVATE/AGENTS.md" ] || cp "$TOOLKIT_ROOT/templates/private-AGENTS.md" "$AC_PRIVATE/AGENTS.md"
+  printf 'Ready: %s\nAsk your agent to run agents-control context and fill PRD.md and STACK.md from the codebase.\n' "$AC_PRIVATE"
 }
-team_config() {
-  printf 'schema=1\nshared_dir=%s\nshared_docs=%s\nadapter_mode=%s\n' "$SHARED_REL" "$TEAM_DOCS" "$ADAPTER"
-}
-choose_settings() {
-  PREVIOUS_PROFILE=$AC_PROFILE
-  OLD_PRIVATE=$AC_PRIVATE
-  OLD_SHARED=$AC_SHARED
-  SELECTED_DOCS=
-  if [ -n "$AC_LOCAL" ]; then SELECTED_DOCS=$(ac_key "$AC_LOCAL" shared_docs); fi
-  PROFILE=${OPT_PROFILE:-$AC_PROFILE}
-  case $PROFILE in unconfigured|legacy) PROFILE=private ;; esac
-  if [ -n "$OPT_ATTACH" ]; then
-    case $OPT_ATTACH in *[!a-zA-Z0-9_-]*|'') ac_die "invalid registration ID" ;; esac
-    if [ -n "$AC_LOCAL" ] && [ "$AC_LOCAL" != "$AC_HOME/repos/$OPT_ATTACH/repo.conf" ]; then
-      ac_die "this worktree already has another registration; resolve it explicitly before reattaching"
-    fi
-    AC_LOCAL=$AC_HOME/repos/$OPT_ATTACH/repo.conf
-    ac_config_valid "$AC_LOCAL" personal
-    AC_REGISTRY=${AC_LOCAL%/repo.conf}
-    OLD_PRIVATE=$(ac_absolute "$(ac_key "$AC_LOCAL" private_dir)")
-    PROFILE=${OPT_PROFILE:-$(ac_key "$AC_LOCAL" profile)}
-    SELECTED_DOCS=$(ac_key "$AC_LOCAL" shared_docs)
-    if [ ! -f "$AC_TEAM" ]; then OLD_SHARED=$AC_REPO/$(ac_key "$AC_LOCAL" shared_dir); fi
-  fi
-  if [ -z "$AC_REGISTRY" ]; then
-    registration=$(printf '%s' "$AC_REPO" | ac_checksum | tr : -)
-    AC_REGISTRY=$AC_HOME/repos/$registration
-    if ac_exists "$AC_REGISTRY/repo.conf"; then
-      ac_config_valid "$AC_REGISTRY/repo.conf" personal
-      if [ "$(ac_key "$AC_REGISTRY/repo.conf" repo_root)" != "$AC_REPO" ]; then
-        ac_die "registration ID collision; choose an explicit --attach registration"
-      fi
-    fi
-  fi
-  AC_PRIVATE=$(ac_absolute "${OPT_PRIVATE:-${OLD_PRIVATE:-$AC_REGISTRY}}")
-  SHARED_REL=${OPT_SHARED:-${OLD_SHARED#"$AC_REPO"/}}
-  case $(ac_fold "$SHARED_REL") in /*|.git|.git/*|.agents|.agents/*|.claude|.claude/*|.cursor|.cursor/*|.agents-control|.agents-control/*)
-    ac_die "shared directory must be a repo-relative docs folder outside tool metadata" ;;
-  esac
-  AC_SHARED=$(ac_absolute "$SHARED_REL")
-  SHARED_REL=${AC_SHARED#"$AC_REPO"/}
-  if ac_exists "$AC_SHARED" && [ ! -d "$AC_SHARED" ]; then ac_die "shared storage is not a directory"; fi
-  if ac_exists "$AC_PRIVATE" && [ ! -d "$AC_PRIVATE" ]; then ac_die "private storage is not a directory"; fi
-  if ac_overlap "$AC_PRIVATE" "$AC_SHARED"; then ac_die "private and shared storage overlap"; fi
-  ac_overlap "$AC_PRIVATE" "$AC_GIT_COMMON" && ac_die "private storage overlaps Git metadata"
-  ac_overlap "$AC_SHARED" "$AC_GIT_COMMON" && ac_die "shared storage overlaps Git metadata"
-  ac_within "$AC_REGISTRY" "$AC_PRIVATE" && [ "$AC_REGISTRY" != "$AC_PRIVATE" ] &&
-    ac_die "private directory cannot contain the registration store"
-  ADAPTER=${OPT_ADAPTER:-$AC_ADAPTER}
-  TEAM_DOCS=$AC_SHARED_DEFAULT
-  if [ -f "$AC_TEAM" ]; then TEAM_DOCS=$(ac_key "$AC_TEAM" shared_docs); fi
-  if [ -n "$OPT_SHARED_DOCS_SET" ]; then
-    ac_docs_valid "$OPT_SHARED_DOCS"
-    if [ "$PROFILE" = team ]; then TEAM_DOCS=$OPT_SHARED_DOCS
-    else SELECTED_DOCS=$OPT_SHARED_DOCS; fi
-  fi
-  if [ -n "$OPT_TEAM_TASKS" ]; then
-    [ "$PROFILE" = team ] || ac_die "--team-tasks requires team profile"
-    case " $TEAM_DOCS " in *" TASKS "*) ;; *) TEAM_DOCS="$TEAM_DOCS TASKS" ;; esac
-  fi
-}
-exclude_private() {
-  new_inside=; old_inside=
-  ac_within "$AC_PRIVATE" "$AC_REPO" && new_inside=1
-  if [ -n "$OLD_PRIVATE" ]; then ac_within "$OLD_PRIVATE" "$AC_REPO" && old_inside=1; fi
-  [ -n "$new_inside$old_inside" ] || return 0
-  if [ -n "$new_inside" ]; then
-    relative=${AC_PRIVATE#"$AC_REPO"/}
-    case $(ac_fold "$relative") in .agents|.agents/*|.claude|.claude/*|.cursor|.cursor/*|.git|.git/*|.agents-control)
-      ac_die "private storage cannot hide project instructions, skills, or shared configuration" ;;
-    esac
-    indexed=$(ac_index_files "$relative") || ac_die "cannot inspect private tracking"
-    [ -z "$indexed" ] || ac_die "private path or case alias is already indexed; remove tracking explicitly"
-    if git rev-parse --verify HEAD >/dev/null 2>&1; then
-      head_paths=$(git -C "$AC_REPO" ls-tree -r --full-tree --name-only HEAD -- "$relative") || ac_die "cannot inspect HEAD"
-      [ -z "$head_paths" ] || ac_die "private path exists in HEAD; migrate tracking explicitly first"
-    fi
-    git -c core.quotePath=false worktree list --porcelain | sed -n 's/^worktree //p' > "$AC_TMP/worktrees"
-    while IFS= read -r worktree; do
-      ac_text_path "$worktree"
-      [ "$worktree" != "$AC_REPO" ] || continue
-      [ -d "$worktree" ] || ac_die "cannot inspect a linked worktree: $worktree"
-      indexed=$(ac_index_files "$relative" "$worktree") || ac_die "cannot inspect linked worktree tracking"
-      [ -z "$indexed" ] ||
-        ac_die "private exclusion would hide tracked material in $worktree"
-      if [ -f "$worktree/.agents-control/team.conf" ]; then
-        (AC_REPO=$worktree; ac_config_valid "$worktree/.agents-control/team.conf" team)
-        other_shared=$(ac_key "$worktree/.agents-control/team.conf" shared_dir)
-        if ac_overlap "$relative" "$other_shared"; then
-          ac_die "private exclusion overlaps another worktree's shared folder"
-        fi
-      fi
-    done < "$AC_TMP/worktrees"
-  fi
-  exclude=$AC_GIT_COMMON/info/exclude
-  AC_ALLOWED_EXCLUDE=$exclude
-  ac_operation_paths
-  exclude_id=$(printf '%s' "$AC_COMMON" | ac_checksum | tr : -)
-  AC_OWNER_FILE=$AC_HOME/exclusions/$exclude_id/managed.tsv
-  AC_OWNER_ROOT=$AC_HOME
-  AC_OWNER_PORTABLE=
-  ac_owner_init
-  ac_block "$exclude" | sed '1d;$d' > "$AC_TMP/exclude-lines"
-  escape_ignore() {
-    printf '%s' "$1" | awk '{
-      for(i=1;i<=length($0);i++) {
-        c=substr($0,i,1)
-        if(index("*?[] !#",c) || c==sprintf("%c",92)) printf "%c",92
-        printf "%s",c
-      }
-    }'
-  }
-  if [ -n "$old_inside" ] && [ "$OLD_PRIVATE" != "$AC_PRIVATE" ]; then
-    old_rule=/$(escape_ignore "${OLD_PRIVATE#"$AC_REPO"/}")/
-    AC_OLD_RULE=$old_rule awk '$0!=ENVIRON["AC_OLD_RULE"]' "$AC_TMP/exclude-lines" > "$AC_TMP/exclude-filtered"
-    mv "$AC_TMP/exclude-filtered" "$AC_TMP/exclude-lines"
-  fi
-  if [ -n "$new_inside" ]; then printf '/%s/\n' "$(escape_ignore "$relative")" >> "$AC_TMP/exclude-lines"; fi
-  if [ -s "$AC_TMP/exclude-lines" ]; then
-    printf '# agents-control:start\n' > "$AC_TMP/exclude-block"
-    awk '!seen[$0]++' "$AC_TMP/exclude-lines" >> "$AC_TMP/exclude-block"
-    printf '# agents-control:end\n' >> "$AC_TMP/exclude-block"
-  else : > "$AC_TMP/exclude-block"; fi
-  ac_plan "$exclude" "$AC_TMP/exclude-block" B owned
-  ac_owner_finish
-}
-setup_personal() {
-  personal_owner
-  manifest private > "$AC_TMP/personal-block"
-  if [ -n "$OLD_PRIVATE" ] && [ "$OLD_PRIVATE" != "$AC_PRIVATE" ] && [ -f "$OLD_PRIVATE/AGENTS.md" ]; then
-    ac_merge_block "$OLD_PRIVATE/AGENTS.md" "$AC_TMP/personal-block" > "$AC_TMP/personal-file"
-    ac_plan "$AC_PRIVATE/AGENTS.md" "$AC_TMP/personal-file" F content
-    ac_owner_record "$AC_PRIVATE/AGENTS.md" B "$(ac_fingerprint "$AC_TMP/personal-file" B)"
-    ac_plan "$OLD_PRIVATE/AGENTS.md" - F content
-  else ac_plan "$AC_PRIVATE/AGENTS.md" "$AC_TMP/personal-block" B owned; fi
-  ac_owner_finish
-  if [ "$PROFILE" = team ]; then ensure_doc "$AC_PRIVATE/docs/TASKS.md" TASKS
-  else
-    for doc in $AC_CORE; do
-      case " $SELECTED_DOCS " in *" $doc "*) [ "$PROFILE" != selected ] || continue ;; esac
-      ensure_doc "$AC_PRIVATE/docs/$doc.md" "$doc"
-    done
-  fi
-}
-setup_team() {
-  team_owner
-  ac_plan "$AC_REPO/.agents-control/context.sh" "$TOOLKIT_ROOT/lib/context.sh" F owned
+check_skills() {
   for skill in $AC_SKILLS; do
-    ac_plan "$AC_REPO/.agents/skills/$skill" "$TOOLKIT_ROOT/.agents/skills/$skill" D owned
+    file=$TOOLKIT_ROOT/skills/$skill/SKILL.md
+    [ -f "$file" ] || ac_die "missing skill: $skill"
+    grep -Fxq "name: $skill" "$file" || ac_die "wrong skill name: $skill"
+    awk 'NR==1 && $0!="---" {exit 1} NR>1 && $0=="---" {closed=1; exit} NR>1 && $0 !~ /^(name|description): .+/ {exit 1} END {if (!closed) exit 1}' "$file" || ac_die "invalid skill frontmatter: $skill"
   done
-  manifest shared > "$AC_TMP/team-block"
-  ac_plan "$AC_REPO/AGENTS.md" "$AC_TMP/team-block" B owned
-  printf '<!-- agents-control:start -->\n@AGENTS.md\n<!-- agents-control:end -->\n' > "$AC_TMP/claude-block"
-  if [ -f "$AC_REPO/CLAUDE.md" ] && grep -q '^@AGENTS\.md[[:space:]]*$' "$AC_REPO/CLAUDE.md" &&
-     [ -z "$(ac_block "$AC_REPO/CLAUDE.md")" ]; then :
-  else ac_plan "$AC_REPO/CLAUDE.md" "$AC_TMP/claude-block" B owned; fi
-  plan_adapters
-  ac_owner_finish
-  for doc in PRD STACK ROADMAP DECISIONS CHANGELOG; do ensure_doc "$AC_SHARED/$doc.md" "$doc"; done
-  if ! ac_exists "$AC_REPO/README.md"; then
-    replace_reference "$TOOLKIT_ROOT/templates/README.md" 'docs-agents-shared/' "$SHARED_REL/" > "$AC_TMP/readme"
-    ac_plan "$AC_REPO/README.md" "$AC_TMP/readme" F content
-  fi
-  team_config > "$AC_TMP/team.conf"
-  ac_late_plan "$AC_TEAM" "$AC_TMP/team.conf" F content
+  [ -f "$TOOLKIT_ROOT/skills/ac-write-manual/assets/SUM.md" ] || ac_die 'missing manual template'
+  printf 'Personal skills OK.\n'
 }
-plan_adapters() {
-  [ ! -L "$AC_REPO/.claude/skills" ] || ac_die "legacy directory symlink: preserve its target and replace the link explicitly before adapting"
-  for skill_dir in "$AC_REPO"/.agents/skills/*; do
-    [ -d "$skill_dir" ] || continue
-    [ "$(ac_absolute "$skill_dir")" = "$skill_dir" ] || ac_die "portable skill source uses a case alias: $skill_dir"
-    [ -z "$(find "$skill_dir" -type l -print)" ] || ac_die "portable skill resources must be real files: $skill_dir"
-    skill=$(basename "$skill_dir")
-    case $skill in *[!a-z0-9-]*) ac_die "unsupported skill directory: $skill" ;; esac
-    target=$AC_REPO/.claude/skills/$skill
-    # Publishing custom untracked skills requires an explicit adapters command.
-    case " $AC_SKILLS " in *" $skill "*) ;; *)
-      if [ "$AC_ACTION" != adapters ] && [ -z "$(ac_owner_expected "$target")" ] &&
-         [ -z "$(ac_index_files ".agents/skills/$skill")" ]; then continue; fi ;;
-    esac
-    if [ "$ADAPTER" = symlink ]; then
-      ln -s "../../.agents/skills/$skill" "$AC_TMP/link.$skill"
-      ac_plan "$target" "$AC_TMP/link.$skill" L owned
-    else
-      staged_id=$(AC_LOOKUP=$skill_dir awk -F '\t' '$2==ENVIRON["AC_LOOKUP"] {print $1}' "$AC_ITEMS")
-      if [ -n "$staged_id" ]; then adapter_source=$AC_TMP/after.$staged_id; else adapter_source=$skill_dir; fi
-      ac_plan "$target" "$adapter_source" D owned
-    fi
+doctor() {
+  ac_require_setup
+  ac_guard_index
+  git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/ || ac_die 'private documents are not excluded; rerun init'
+  for doc in $AC_CORE; do
+    ac_safe_path "$AC_PRIVATE/$doc.md"
+    [ -f "$AC_PRIVATE/$doc.md" ] || ac_die "missing $doc.md; rerun init"
   done
-  # New team setup sources do not exist until apply.
-  for skill in $AC_SKILLS; do
-    [ ! -d "$AC_REPO/.agents/skills/$skill" ] || continue
-    target=$AC_REPO/.claude/skills/$skill
-    if [ "$ADAPTER" = symlink ]; then
-      ln -s "../../.agents/skills/$skill" "$AC_TMP/link.$skill"
-      ac_plan "$target" "$AC_TMP/link.$skill" L owned
-    else ac_plan "$target" "$TOOLKIT_ROOT/.agents/skills/$skill" D owned; fi
-  done
-  if [ -f "$AC_OWNER_FILE" ]; then
-    while IFS="$AC_TAB" read -r owned kind fingerprint; do
-      case $owned in .claude/skills/*)
-        skill=${owned#.claude/skills/}
-        case $skill in *[!a-z0-9-]*) ac_die "invalid owned adapter path" ;; esac
-        if [ ! -d "$AC_REPO/.agents/skills/$skill" ] && ! planned "$AC_REPO/.agents/skills/$skill"; then
-          ac_plan "$AC_REPO/$owned" - "$kind" owned
-        fi ;;
-      esac
-    done < "$AC_OWNER_FILE"
-  fi
+  printf 'Private documents and Git exclusion OK: %s\n' "$AC_PRIVATE"
 }
-finish_operation() {
-  ac_preview
-  if [ -n "$AC_APPLY" ]; then ac_apply; fi
-}
-init_or_migrate() {
-  refuse_toolkit
-  if [ "$AC_ACTION" = init ] && [ -n "$AC_LEGACY" ]; then ac_die "legacy setup preserved; run migrate with explicit document destinations"; fi
-  choose_settings
-  if [ -n "$AC_LEGACY" ] && [ -f "$AC_REPO/.agents/agents-control.json" ]; then
-    if ! ac_exists "$AC_REGISTRY/state/legacy-adapter.json"; then
-      ac_plan "$AC_REGISTRY/state/legacy-adapter.json" "$AC_REPO/.agents/agents-control.json" F content
+action=${1:-help}
+[ "$#" -eq 0 ] || shift
+case $action in
+  help|-h|--help) [ "$#" -eq 0 ] || ac_die 'help takes no arguments'; usage; exit 0 ;;
+  version)
+    [ "$#" -eq 0 ] || ac_die 'version takes no arguments'
+    if [ -f "$TOOLKIT_ROOT/.agents-control-version" ]; then cat "$TOOLKIT_ROOT/.agents-control-version"
+    else printf 'development\n'; fi
+    exit 0 ;;
+  doctor)
+    if [ "${1:-}" = --skills-only ]; then shift; [ "${1:-}" != --strict ] || shift
+      [ "$#" -eq 0 ] || ac_die 'unexpected doctor arguments'; check_skills; exit 0
     fi
-  fi
-  if [ -n "$OPT_ATTACH" ]; then printf 'Reattaching registration %s to %s\n' "$OPT_ATTACH" "$AC_REPO"; fi
-  if [ -n "$OLD_PRIVATE" ] && [ "$OLD_PRIVATE" != "$AC_PRIVATE" ]; then
-    if ac_within "$OLD_PRIVATE" "$AC_PRIVATE" || ac_within "$AC_PRIVATE" "$OLD_PRIVATE"; then
-      ac_die "old and new private directories must not contain one another"
+    [ "${1:-}" != --strict ] || shift
+    [ "$#" -eq 0 ] || ac_die 'unexpected doctor arguments' ;;
+  resolve)
+    [ "$#" -ge 1 ] || ac_die 'resolve needs a document name'
+    doc=$(ac_doc "$1"); shift
+    read_doc=
+    if [ "$#" -gt 0 ]; then
+      case $1 in --read) read_doc=1 ;; --path) ;; *) ac_die 'resolve accepts --read or --path' ;; esac
+      shift
     fi
-    [ -z "$DOC_SELECTIONS$OPT_SECTION" ] || ac_die "change private paths and select document moves in separate previews"
-    if ac_within "$OLD_PRIVATE" "$AC_REPO"; then
-      for extra in "$OLD_PRIVATE"/* "$OLD_PRIVATE"/.[!.]* "$OLD_PRIVATE"/..?*; do
-        ac_exists "$extra" || continue
-        case $(basename "$extra") in docs|AGENTS.md) ;; *)
-          ac_die "extra private material must be moved explicitly before changing an in-checkout private directory: $extra" ;;
-        esac
-      done
-      if [ -f "$AC_REGISTRY/state/retired-private" ]; then cp "$AC_REGISTRY/state/retired-private" "$AC_TMP/retired"
-      else : > "$AC_TMP/retired"; fi
-      printf '%s\n%s\n' "$(ac_absolute "$OLD_PRIVATE/docs")" "$(ac_absolute "$OLD_PRIVATE/AGENTS.md")" >> "$AC_TMP/retired"
-    fi
-    if [ -d "$OLD_PRIVATE/docs" ]; then
-      ac_exists "$AC_PRIVATE/docs" && ac_die "private destination exists"
-      ac_plan "$AC_PRIVATE/docs" "$OLD_PRIVATE/docs" D content
-      ac_plan "$OLD_PRIVATE/docs" - D content
-    fi
-  fi
-  if [ -f "$AC_TEAM" ] && [ "$OLD_SHARED" != "$AC_SHARED" ]; then
-    if ac_within "$OLD_SHARED" "$AC_SHARED" || ac_within "$AC_SHARED" "$OLD_SHARED"; then
-      ac_die "old and new shared directories must not contain one another"
-    fi
-    [ "$AC_ACTION" = migrate ] || ac_die "change shared paths through migrate"
-    [ -z "$DOC_SELECTIONS$OPT_SECTION" ] || ac_die "change shared paths and select document moves in separate previews"
-    ac_exists "$AC_SHARED" && ac_die "shared destination already exists"
-    if [ -d "$OLD_SHARED" ]; then
-      ac_plan "$AC_SHARED" "$OLD_SHARED" D content
-      ac_plan "$OLD_SHARED" - D content
-    fi
-    if [ -f "$AC_REPO/README.md" ] && [ ! -L "$AC_REPO/README.md" ]; then
-      replace_reference "$AC_REPO/README.md" "${OLD_SHARED#"$AC_REPO"/}/" "$SHARED_REL/" > "$AC_TMP/readme"
-      ac_plan "$AC_REPO/README.md" "$AC_TMP/readme" F content
-    fi
-  fi
-  plan_selections
-  if [ -f "$AC_TMP/retired" ]; then ac_plan "$AC_REGISTRY/state/retired-private" "$AC_TMP/retired" F content; fi
-  exclude_private
-  setup_personal
-  if [ "$PROFILE" = team ] || { [ -f "$AC_TEAM" ] && [ "$OLD_SHARED" != "$AC_SHARED" ]; }; then setup_team; fi
-  personal_config > "$AC_TMP/repo.conf"
-  ac_late_plan "$AC_REGISTRY/repo.conf" "$AC_TMP/repo.conf" F content
-  if [ "$AC_ACTION" = init ]; then
-    # A fresh setup is explicitly authorized; changed settings require migration.
-    if [ -n "$AC_LOCAL" ] &&
-       { [ "$PROFILE" != "$PREVIOUS_PROFILE" ] || [ "$OLD_PRIVATE" != "$AC_PRIVATE" ] || [ "$OLD_SHARED" != "$AC_SHARED" ]; }; then
-      ac_die "recorded settings differ; use migrate"
-    fi
-    ac_preview
-    if [ -n "$AC_ADOPT" ] && [ -z "$AC_APPLY" ]; then return 0; fi
-    if [ -z "$AC_APPLY" ]; then AC_EXPECT=$AC_TOKEN; fi
-    ac_apply
-    printf 'Profile: %s\nPrivate workspace: %s\nShared directory: %s\n' "$PROFILE" "$AC_PRIVATE" "$AC_SHARED"
-    if [ "$PROFILE" = team ]; then
-      printf 'Review these changed shared paths for an explicit commit:\n'
-      while IFS="$AC_TAB" read -r item path kind before after; do
-        if ac_within "$path" "$AC_REPO" && ! ac_within "$path" "$AC_PRIVATE" &&
-           ! ac_within "$path" "$AC_REPO/.git"; then printf '  %s\n' "${path#"$AC_REPO"/}"; fi
-      done < "$AC_ITEMS"
-    else printf 'Personal files stay local. Commit only explicitly shared docs.\n'; fi
-  else finish_operation; fi
-}
-plan_selections() {
-  [ -z "$DOC_SELECTIONS" ] && return 0
-  printf '%s\n' "$DOC_SELECTIONS" > "$AC_TMP/selections"
-  selection_count=$(wc -l < "$AC_TMP/selections" | tr -d ' ')
-  [ -z "$OPT_SECTION" ] || [ "$selection_count" = 1 ] || ac_die "--section requires exactly one --doc"
-  while IFS=: read -r doc destination; do
-    relative=$(ac_doc "$doc")
-    doc=${relative%.md}
-    candidates=0; source=
-    if [ -n "$OLD_PRIVATE" ] && [ -f "$OLD_PRIVATE/docs/$relative" ] && [ "$OPT_FROM" != shared ] && [ "$OPT_FROM" != legacy ]; then
-      source=$OLD_PRIVATE/docs/$relative; candidates=$((candidates+1))
-    fi
-    if [ -f "$OLD_SHARED/$relative" ] && [ "$OPT_FROM" != private ] && [ "$OPT_FROM" != legacy ]; then
-      source=$OLD_SHARED/$relative; candidates=$((candidates+1))
-    fi
-    if [ -f "$AC_REPO/docs-agents/$relative" ] && [ "$OPT_FROM" != private ] && [ "$OPT_FROM" != shared ]; then
-      source=$AC_REPO/docs-agents/$relative; candidates=$((candidates+1))
-    fi
-    [ "$candidates" = 1 ] || ac_die "missing or ambiguous source for $doc; choose --from=private|shared|legacy"
-    if [ "$destination" = private ]; then target=$AC_PRIVATE/docs/$relative
-    else target=$AC_SHARED/$relative; fi
-    if [ "$source" != "$target" ]; then plan_move "$source" "$target"; fi
-    if [ -z "$OPT_SECTION" ]; then
-      new_choices=
-      for choice in $SELECTED_DOCS; do [ "$choice" = "$doc" ] || new_choices="$new_choices $choice"; done
-      SELECTED_DOCS=$new_choices
-      if [ "$destination" = shared ]; then SELECTED_DOCS="$SELECTED_DOCS $doc"; fi
-      if [ "$PROFILE" = team ]; then
-        new_choices=
-        for choice in $TEAM_DOCS; do [ "$choice" = "$doc" ] || new_choices="$new_choices $choice"; done
-        TEAM_DOCS=$new_choices
-        if [ "$destination" = shared ]; then TEAM_DOCS="$TEAM_DOCS $doc"; fi
-      fi
-    fi
-  done < "$AC_TMP/selections"
-}
-plan_move() {
-  move_source=$(ac_absolute "$1"); move_target=$(ac_absolute "$2")
-  [ -f "$move_source" ] && [ ! -L "$move_source" ] || ac_die "source must be a regular Markdown file"
-  ac_validate_target "$move_source"; ac_validate_target "$move_target"
-  if [ -n "$OPT_SECTION" ]; then
-    AC_HEADING=$OPT_SECTION LC_ALL=C awk -f "$TOOLKIT_ROOT/lib/markdown.awk" "$move_source" > "$AC_TMP/range" ||
-      ac_die "heading is missing, ambiguous, or unsupported"
-    IFS=' ' read -r begin end < "$AC_TMP/range"
-    dd if="$move_source" of="$AC_TMP/selection" bs=1 skip="$begin" count="$((end-begin))" 2>/dev/null
-    dd if="$move_source" of="$AC_TMP/remainder" bs=1 count="$begin" 2>/dev/null
-    dd if="$move_source" bs=1 skip="$end" 2>/dev/null >> "$AC_TMP/remainder"
-    AC_MARKDOWN_MODE=links AC_REFERENCE_SOURCE=$move_source \
-      awk -f "$TOOLKIT_ROOT/lib/markdown.awk" "$AC_TMP/remainder" >/dev/null ||
-      ac_die "moving the section would leave unresolved references in the private remainder"
-  else cp "$move_source" "$AC_TMP/selection"; fi
-  validate_move_links "$move_source" "$move_target" "$AC_TMP/selection"
-  if ac_exists "$move_target"; then
-    [ -n "$OPT_MERGE" ] && [ -f "$move_target" ] && [ ! -L "$move_target" ] ||
-      ac_die "destination exists; inspect an explicit --merge preview"
-    AC_MARKDOWN_MODE=ids awk -f "$TOOLKIT_ROOT/lib/markdown.awk" "$AC_TMP/selection" | LC_ALL=C sort -u > "$AC_TMP/source-ids"
-    AC_MARKDOWN_MODE=ids awk -f "$TOOLKIT_ROOT/lib/markdown.awk" "$move_target" | LC_ALL=C sort -u > "$AC_TMP/target-ids"
-    if [ -n "$(LC_ALL=C comm -12 "$AC_TMP/source-ids" "$AC_TMP/target-ids")" ]; then ac_die "duplicate headings or identifiers in merge"; fi
-    cat "$move_target" > "$AC_TMP/destination"
-    printf '\n' >> "$AC_TMP/destination"
-    cat "$AC_TMP/selection" >> "$AC_TMP/destination"
-  else cp "$AC_TMP/selection" "$AC_TMP/destination"; fi
-  ac_plan "$move_target" "$AC_TMP/destination" F content
-  if [ -n "$OPT_SECTION" ]; then ac_plan "$move_source" "$AC_TMP/remainder" F content
-  else ac_plan "$move_source" - F content; fi
-  if ac_within "$move_source" "$AC_REPO"; then
-    if [ ! -f "$AC_TMP/retired" ]; then
-      if [ -f "$AC_REGISTRY/state/retired-private" ]; then cp "$AC_REGISTRY/state/retired-private" "$AC_TMP/retired"
-      else : > "$AC_TMP/retired"; fi
-    fi
-    printf '%s\n' "$move_source" >> "$AC_TMP/retired"
-  fi
-}
-validate_move_links() {
-  AC_MARKDOWN_MODE=links AC_REFERENCE_SOURCE=$1 awk -f "$TOOLKIT_ROOT/lib/markdown.awk" "$3" > "$AC_TMP/links" ||
-    ac_die "selected Markdown has unresolved references or unsupported link syntax"
-  while IFS= read -r link; do
-    case $link in ''|\#*|https://*|http://*|mailto:*) continue ;;
-      /*|~*|file:*|*' '*|*'%20'*) ac_die "private, absolute, or complex link requires an explicit edit before sharing: $link" ;;
-    esac
-    link=${link%%#*}
-    case /$link/ in */../*|*/./*) ac_die "relative traversal link needs an explicit edit before moving: $link" ;; esac
-    for link_base in "$(dirname "$1")" "$(dirname "$2")"; do
-      link_path=$(ac_absolute "$link_base/$link")
-      if [ -n "$AC_PRIVATE" ] && ac_within "$link_path" "$AC_PRIVATE" &&
-         [ "$link_base" = "$(dirname "$2")" ]; then ac_die "shared link points into private storage: $link"; fi
-    done
-    if [ -e "$(dirname "$1")/$link" ] && [ ! -e "$(dirname "$2")/$link" ]; then
-      ac_die "relative reference would break after moving: $link"
-    fi
-    if [ ! -e "$(dirname "$1")/$link" ] && [ ! -e "$(dirname "$2")/$link" ]; then
-      ac_die "unresolved reference: $link"
-    fi
-  done < "$AC_TMP/links"
-}
-cmd_share() {
-  [ -n "$AC_LOCAL" ] || ac_die "register a private workspace with init before sharing"
-  [ -n "$POSITIONAL" ] && [ -n "$OPT_TO" ] || ac_die "share requires SOURCE and --to=DOC"
-  choose_settings
-  [ "$PROFILE" != private ] || PROFILE=selected
-  source=$(ac_absolute "$POSITIONAL")
-  private_docs=$(ac_absolute "$AC_PRIVATE/docs")
-  ac_within "$source" "$private_docs" || ac_die "share sources must be in the registered private docs folder; use migrate for legacy content"
-  relative=$(ac_doc "$OPT_TO")
-  target=$(ac_absolute "$AC_SHARED/$relative")
-  relative=${target#"$AC_SHARED"/}
-  plan_move "$source" "$target"
-  if [ -z "$OPT_SECTION" ]; then
-    doc=${relative%.md}
-    case " $SELECTED_DOCS " in *" $doc "*) ;; *) SELECTED_DOCS="$SELECTED_DOCS $doc" ;; esac
-  fi
-  personal_config > "$AC_TMP/repo.conf"
-  ac_late_plan "$AC_REGISTRY/repo.conf" "$AC_TMP/repo.conf" F content
-  if [ -f "$AC_TMP/retired" ]; then ac_plan "$AC_REGISTRY/state/retired-private" "$AC_TMP/retired" F content; fi
-  finish_operation
-}
-cmd_refresh() {
-  [ -f "$AC_TEAM" ] || ac_die "team refresh requires team configuration; legacy layouts require migration, personal skills use install.sh"
-  PROFILE=team; choose_settings
-  team_owner
-  if [ "$AC_ACTION" = update ]; then
-    ac_plan "$AC_REPO/.agents-control/context.sh" "$TOOLKIT_ROOT/lib/context.sh" F owned
-    for skill in $AC_SKILLS; do ac_plan "$AC_REPO/.agents/skills/$skill" "$TOOLKIT_ROOT/.agents/skills/$skill" D owned; done
-  fi
-  plan_adapters
-  ac_owner_finish
-  team_config > "$AC_TMP/team.conf"
-  ac_late_plan "$AC_TEAM" "$AC_TMP/team.conf" F content
-  ac_preview
-  if [ -z "$AC_APPLY" ]; then
-    # Updating only unchanged owned generated artifacts is a reversible operation.
-    AC_EXPECT=$AC_TOKEN
-  fi
-  ac_apply
-}
-lint_skills() {
-  for directory in "$AC_REPO"/.agents/skills/*; do
-    [ -d "$directory" ] || continue
-    skill=$(basename "$directory")
-    [ -f "$directory/SKILL.md" ] || { doctor_warn "$skill has no SKILL.md"; continue; }
-    name=$(awk '/^name:/ {sub(/^name:[ ]*/,""); print; exit}' "$directory/SKILL.md")
-    [ "$name" = "$skill" ] || doctor_warn "$skill frontmatter name does not match its directory"
-    grep -q '^description:.' "$directory/SKILL.md" || doctor_warn "$skill description is missing"
-    for key in $(awk 'NR==1 {next} /^---$/ {exit} /^[a-zA-Z][a-zA-Z0-9_-]*:/ {sub(/:.*/,""); print}' "$directory/SKILL.md"); do
-      case $key in name|description|license|compatibility|metadata|allowed-tools) ;; *) doctor_warn "$skill has nonportable frontmatter key $key" ;; esac
-    done
-  done
-}
-doctor_warn() { WARNINGS=$((WARNINGS+1)); printf 'warning: %s\n' "$*" >&2; }
-cmd_doctor() {
-  WARNINGS=0
-  lint_skills
-  if [ -n "$SKILLS_ONLY" ]; then [ "$WARNINGS" = 0 ] || [ -z "$STRICT" ]; return; fi
-  printf 'Profile: %s\nShared: %s\nPrivate: %s\n' "$AC_PROFILE" "$AC_SHARED" "${AC_PRIVATE:-unavailable}"
-  printf 'Codex: AGENTS.md and .agents/skills\nClaude Code: CLAUDE.md import and .claude/skills\nCursor: AGENTS.md/project rules and .agents/skills; personal User Rules configured separately\n'
-  if [ -n "$AC_LEGACY" ]; then doctor_warn "legacy layout preserved; destinations need explicit migration"; fi
-  if [ -n "$AC_LEGACY_LAYOUT" ] && [ "$AC_SHARED" != "$AC_REPO/docs-agents" ]; then
-    if [ -d "$AC_REPO/docs-agents" ] && [ -n "$(find "$AC_REPO/docs-agents" -type f -name '*.md' -print)" ]; then
-      doctor_warn "unclassified legacy docs remain; choose destinations with migrate before editing them"
-    fi
-    if [ -f "$AC_REPO/AGENTS.md" ] && grep -Fq 'docs-agents/' "$AC_REPO/AGENTS.md"; then
-      doctor_warn "legacy paths remain in project guidance; review them explicitly after migration"
-    fi
-  fi
-  if [ -f "$AC_TEAM" ]; then
-    [ -f "$AC_REPO/AGENTS.md" ] || doctor_warn "shared AGENTS.md is missing"
-    [ ! -f "$AC_REPO/AGENTS.override.md" ] || doctor_warn "AGENTS.override.md shadows root AGENTS.md"
-    [ -f "$AC_REPO/CLAUDE.md" ] && grep -q '^@AGENTS\.md[[:space:]]*$' "$AC_REPO/CLAUDE.md" || doctor_warn "Claude adapter lacks @AGENTS.md"
-    for directory in "$AC_REPO"/.agents/skills/*; do
-      [ -d "$directory" ] || continue
-      skill=$(basename "$directory"); adapter=$AC_REPO/.claude/skills/$skill
-      case " $AC_SKILLS " in *" $skill "*) ;; *)
-        if [ -z "$(ac_index_files ".agents/skills/$skill")" ] &&
-           ! ac_exists "$adapter"; then continue; fi ;;
-      esac
-      if ! ac_exists "$adapter" || { [ -L "$adapter" ] && [ ! -e "$adapter" ]; }; then
-        doctor_warn "missing or broken adapter: $skill"
-      elif [ ! -L "$adapter" ] && [ "$(ac_fingerprint "$directory" D)" != "$(ac_fingerprint "$adapter" D)" ]; then
-        doctor_warn "stale copied adapter: $skill"
-      fi
-    done
-    if [ -f "$AC_REPO/.agents-control/managed.tsv" ]; then
-      while IFS="$AC_TAB" read -r owned kind fingerprint; do
-        case $owned in \#*) continue ;; esac
-        ac_text_path "$owned"
-        case $owned in /*|.git|.git/*) ac_die "invalid portable ownership path" ;; esac
-        [ "$(ac_fingerprint "$AC_REPO/$owned" "$kind")" = "$fingerprint" ] ||
-          doctor_warn "edited or missing generated artifact: $owned"
-      done < "$AC_REPO/.agents-control/managed.tsv"
-    fi
-  fi
-  if ! ac_guard_index; then doctor_warn "private content is indexed"; fi
-  ac_operation_paths
-  [ ! -f "$AC_JOURNAL/pending" ] || doctor_warn "interrupted operation requires recovery"
-  [ "$WARNINGS" = 0 ] || [ -z "$STRICT" ]
-}
-
-AC_ACTION=${1:-help}
-[ $# = 0 ] || shift
-case $AC_ACTION in help|-h|--help) usage; exit 0 ;; version) version; exit 0 ;; esac
-OPT_PROFILE=; OPT_PRIVATE=; OPT_SHARED=; OPT_ADAPTER=; OPT_ATTACH=
-OPT_SHARED_DOCS=; OPT_SHARED_DOCS_SET=; OPT_TEAM_TASKS=
-OPT_SECTION=; OPT_TO=; OPT_FROM=; OPT_MERGE=; DOC_SELECTIONS=
-AC_ADOPT=; AC_APPLY=; AC_EXPECT=; AC_RECOVERY=; STRICT=; SKILLS_ONLY=; POSITIONAL=
-RESOLVE_SCOPE=; RESOLVE_READ=; RESOLVE_PATH=
-for argument in "$@"; do
-  case $argument in
-    -h|--help) usage; exit 0 ;;
-    --*)
-      case $AC_ACTION:$argument in
-        init:--profile=*|migrate:--profile=*|init:--private-dir=*|migrate:--private-dir=*|init:--shared-dir=*|migrate:--shared-dir=*|init:--shared-docs=*|migrate:--shared-docs=*|init:--team-tasks|migrate:--team-tasks|init:--attach=*|migrate:--attach=*|init:--adopt|migrate:--adopt) ;;
-        init:--mode=*|migrate:--mode=*|adapters:--mode=*|update:--mode=*) ;;
-        migrate:--doc=*|migrate:--from=*|migrate:--section=*|migrate:--merge|share:--to=*|share:--section=*|share:--merge) ;;
-        init:--apply|migrate:--apply|share:--apply|adapters:--apply|update:--apply|init:--expect=*|migrate:--expect=*|share:--expect=*|adapters:--expect=*|update:--expect=*) ;;
-        doctor:--strict|doctor:--skills-only|resolve:--scope=*|resolve:--read|resolve:--path|recover:--resume|recover:--restore) ;;
-        *) ac_die "option is not valid for $AC_ACTION: $argument" ;;
-      esac ;;
-    *) case $AC_ACTION in share|resolve) ;; *) ac_die "$AC_ACTION takes no positional arguments" ;; esac ;;
-  esac
-  case $argument in
-    --profile=private|--profile=selected|--profile=team) OPT_PROFILE=${argument#--profile=} ;;
-    --private-dir=*) OPT_PRIVATE=${argument#--private-dir=}; [ -n "$OPT_PRIVATE" ] || ac_die "private path cannot be empty" ;;
-    --shared-dir=*) OPT_SHARED=${argument#--shared-dir=}; [ -n "$OPT_SHARED" ] || ac_die "shared path cannot be empty" ;;
-    --shared-docs=*) OPT_SHARED_DOCS=${argument#--shared-docs=}; OPT_SHARED_DOCS_SET=1 ;;
-    --team-tasks) OPT_TEAM_TASKS=1 ;;
-    --mode=copy|--mode=symlink) OPT_ADAPTER=${argument#--mode=} ;;
-    --attach=*) OPT_ATTACH=${argument#--attach=}; [ -n "$OPT_ATTACH" ] || ac_die "registration ID cannot be empty" ;;
-    --doc=*)
-      selection=${argument#--doc=}; doc=${selection%:*}; destination=${selection##*:}
-      ac_doc "$doc" >/dev/null
-      case $destination in private|shared) ;; *) ac_die "document destination must be private or shared" ;; esac
-      if [ -n "$DOC_SELECTIONS" ]; then DOC_SELECTIONS="$DOC_SELECTIONS
-$doc:$destination"; else DOC_SELECTIONS="$doc:$destination"; fi ;;
-    --section=*) OPT_SECTION=${argument#--section=} ;;
-    --to=*) OPT_TO=${argument#--to=} ;;
-    --from=private|--from=shared|--from=legacy) OPT_FROM=${argument#--from=} ;;
-    --merge) OPT_MERGE=1 ;;
-    --adopt) AC_ADOPT=1 ;;
-    --apply) AC_APPLY=1 ;;
-    --expect=*) AC_EXPECT=${argument#--expect=} ;;
-    --resume|--restore) [ -z "$AC_RECOVERY" ] || ac_die "choose one recovery direction"; AC_RECOVERY=${argument#--} ;;
-    --strict) STRICT=1 ;;
-    --skills-only) SKILLS_ONLY=1 ;;
-    --scope=private|--scope=shared) RESOLVE_SCOPE=$argument ;;
-    --read) RESOLVE_READ=$argument ;;
-    --path) RESOLVE_PATH=$argument ;;
-    --force) ac_die "--force no longer overwrites edits; resolve the conflict through an explicit migration preview" ;;
-    -h|--help) usage; exit 0 ;;
-    --*) ac_die "unknown option: $argument" ;;
-    *) [ -z "$POSITIONAL" ] || ac_die "only one positional argument is supported"; POSITIONAL=$argument ;;
-  esac
-done
-[ -z "$AC_EXPECT" ] || [ -n "$AC_APPLY" ] || ac_die "--expect requires --apply"
-if [ "$AC_ACTION" = migrate ]; then
-  [ -z "$OPT_SECTION$OPT_FROM$OPT_MERGE" ] || [ -n "$DOC_SELECTIONS" ] || ac_die "content options require --doc"
+    [ "$#" -eq 0 ] || ac_die 'unexpected resolve arguments' ;;
+  init|context|guard-index) [ "$#" -eq 0 ] || ac_die "$action takes no arguments" ;;
+  *) ac_die "unknown command: $action. Run agents-control help" ;;
+esac
+if ! ac_load; then
+  [ "$action" != context ] || exit 0
+  ac_die 'not a Git checkout'
 fi
-ac_load
-case $AC_ACTION in
+case $action in
+  init) init ;;
   context) ac_context ;;
   resolve)
-    [ -n "$POSITIONAL" ] || ac_die "resolve requires a document"
-    set -- "$POSITIONAL"
-    [ -z "$RESOLVE_SCOPE" ] || set -- "$@" "$RESOLVE_SCOPE"
-    [ -z "$RESOLVE_READ" ] || set -- "$@" "$RESOLVE_READ"
-    [ -z "$RESOLVE_PATH" ] || set -- "$@" "$RESOLVE_PATH"
-    ac_resolve "$@" ;;
+    ac_require_setup
+    path=$AC_PRIVATE/$doc
+    ac_safe_path "$path"
+    if [ -n "$read_doc" ]; then [ ! -f "$path" ] || cat "$path"
+    else printf '%s\n' "$path"; fi ;;
   guard-index) ac_guard_index ;;
-  doctor) cmd_doctor ;;
-  init|migrate|share|update|adapters|recover)
-    ac_begin
-    case $AC_ACTION in
-      init|migrate) init_or_migrate ;;
-      share) cmd_share ;;
-      update|adapters) cmd_refresh ;;
-      recover) [ -n "$AC_RECOVERY" ] || ac_die "recover requires --resume or --restore"; ac_recover ;;
-    esac ;;
-  *) ac_die "unknown command: $AC_ACTION" ;;
+  doctor) doctor ;;
 esac

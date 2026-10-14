@@ -1,30 +1,18 @@
 ---
-name: log
-description: Quickly add one entry to the right doc — a task, idea, stack choice, concern, or open question — in the correct format. Triggered by "log"/"note"/"capture"/"add"/"jot down" + the kind, e.g. "log this task", "note this idea down", "capture a concern", "add TODO", "we're using X for Y — put it in the stack", "open question:". Addition only.
+name: ac-log
+description: Add a personal task, idea, technology choice, concern or question to private agents-control docs. Use when the user asks for ac-log or to capture a note with agents-control.
 ---
 
 # log
 
-## Resolve destinations first
+## Private documents
 
-If the repository has `.agents-control/context.sh`, call it with `sh`.
-Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
-Resolve the concrete path and visibility before editing; never assume a docs folder.
-Use `--scope=private` or `--scope=shared` when the request establishes its audience.
-An invalid configuration or unavailable private workspace stops the write.
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
 
-For new material, run `resolve TASKS` with an explicit scope if needed.
-For an existing entry, use `resolve TASKS --read` and find it in the returned
-files. Keep edits in the containing file. Ask if identifiers or headings match
-multiple files. Unclassified legacy entries need an explicit migration destination
-before editing. Do not recreate content that was moved to shared storage.
-
-Map the kind to TASKS, IDEAS, STACK, CONCERNS, or QUESTIONS before resolving.
-Personal and team tasks have different owners. If both lists exist and the owner
-is unclear, ask for the audience before adding an item.
-
-
-Append a single new entry to the correct resolved doc, in that doc's format. This skill only **adds** — it never edits, reorders, or removes existing entries. Decisions and glossary terms are out of scope (use `decide` / `glossary`).
+Append a single new entry to the correct resolved doc, in that doc's format. This skill only **adds** — it never edits, reorders, or removes existing entries. Decisions and glossary terms are out of scope (use `ac-decide` / `ac-glossary`).
 
 ## Route by what the user is logging
 
@@ -81,5 +69,5 @@ What it is and why it matters (10–50 words). Ref: <url, if any>
 
 - **One entry per invocation**, inserted at the top — no rewriting the rest of the file.
 - **Keep it tight.** Fit the format; don't pad. Rephrase the user's note only enough to be clear.
-- **Never guess an id.** Use `resolve DOC --read`, find the highest ID across the returned files, and increment. Do not reuse an ID moved into shared storage.
+- **Never guess an id.** Read the private document, find the highest ID, and increment.
 - **Ambiguous target?** If it's unclear which doc the user means, ask before writing.
