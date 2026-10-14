@@ -30,19 +30,19 @@ agents-control needs to support personal use on a shared codebase, selective sha
 
 ## Installation requirements
 
-- [ ] Provide explicit installation modes for private use, selected sharing, and official team use.
-- [ ] Record the selected mode and the configured private and shared paths so subsequent commands use the correct destinations.
-- [ ] Apply the selected mode to docs, manifests, skills, and tool adapters. Hiding docs alone is insufficient.
-- [ ] Update setup and writing skills so they understand private and shared destinations instead of assuming every doc belongs in `docs-agents/`.
-- [ ] Manage local exclusions without overwriting unrelated entries. Exclusions must target agents-control's private artifacts without hiding team-owned files.
-- [ ] Explain the limits of local exclusions. Already tracked files need separate handling, and Git exclusions do not provide access control or confidentiality.
-- [ ] Define behavior for existing team instructions, skills, and docs. Installation must preserve them and handle conflicts explicitly.
-- [ ] Document which artifacts remain local and which are available to collaborators or agents working from a fresh clone.
+- [x] Provide explicit installation modes for private use, selected sharing, and official team use.
+- [x] Record the selected mode and the configured private and shared paths so subsequent commands use the correct destinations.
+- [x] Apply the selected mode to docs, manifests, skills, and tool adapters. Hiding docs alone is insufficient.
+- [x] Update setup and writing skills so they understand private and shared destinations instead of assuming every doc belongs in `docs-agents/`.
+- [x] Manage local exclusions without overwriting unrelated entries. Exclusions must target agents-control's private artifacts without hiding team-owned files.
+- [x] Explain the limits of local exclusions. Already tracked files need separate handling, and Git exclusions do not provide access control or confidentiality.
+- [x] Define behavior for existing team instructions, skills, and docs. Installation must preserve them and handle conflicts explicitly.
+- [x] Document which artifacts remain local and which are available to collaborators or agents working from a fresh clone.
 
 ## Migration requirements
 
-- [ ] Support migration from the existing agents-control layout and behavior into each of the three modes.
-- [ ] Support every transition between the new modes, including the gradual path from private use to selected sharing to official team use.
+- [x] Support migration from the existing agents-control layout and behavior into each of the three modes.
+- [x] Support every transition between the new modes, including the gradual path from private use to selected sharing to official team use.
 
 | Starting mode | Required destinations |
 | --- | --- |
@@ -51,14 +51,14 @@ agents-control needs to support personal use on a shared codebase, selective sha
 | Selected sharing | Private, official team use |
 | Official team use | Private, selected sharing |
 
-- [ ] Allow users to choose which docs and sections to share or keep private during migration.
-- [ ] Preserve content, user edits, existing team configuration, and unrelated files. Handle destination conflicts without silently overwriting content.
-- [ ] Update paths, manifests, skills, adapters, and local exclusions together so agents can still find and write the correct docs after migration.
-- [ ] Support changes to configured folder names and paths.
-- [ ] Show a migration preview that identifies file moves, content sharing, and changes to Git tracking before applying them.
-- [ ] Distinguish an individual's move back to private use from removing the team's shared setup. A personal mode change must preserve shared artifacts that colleagues still use.
-- [ ] Explain that making previously shared content private cannot remove it from Git history or colleagues' existing clones.
-- [ ] Make installation and migration safe to rerun, with a recovery path if migration stops partway through.
+- [x] Allow users to choose which docs and sections to share or keep private during migration.
+- [x] Preserve content, user edits, existing team configuration, and unrelated files. Handle destination conflicts without silently overwriting content.
+- [x] Update paths, manifests, skills, adapters, and local exclusions together so agents can still find and write the correct docs after migration.
+- [x] Support changes to configured folder names and paths.
+- [x] Show a migration preview that identifies file moves, content sharing, and changes to Git tracking before applying them.
+- [x] Distinguish an individual's move back to private use from removing the team's shared setup. A personal mode change must preserve shared artifacts that colleagues still use.
+- [x] Explain that making previously shared content private cannot remove it from Git history or colleagues' existing clones.
+- [x] Make installation and migration safe to rerun, with a recovery path if migration stops partway through.
 
 ## Open design questions
 
@@ -69,3 +69,7 @@ agents-control needs to support personal use on a shared codebase, selective sha
 - Which docs, instructions, and skills should official team use share by default? Which personal artifacts should remain private?
 - How should agents resolve overlapping private and shared guidance and choose the destination for a new entry?
 - Which defaults best preserve existing installations without accidentally publishing personal material?
+
+Implementation and behavior coverage are recorded in [PLAN.md](PLAN.md). Native
+host discovery remains pending as specified there. Git and confidentiality limits
+are in the [usage guide](docs/usage.md#ownership-git-and-updates).
