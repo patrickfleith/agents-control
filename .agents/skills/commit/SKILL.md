@@ -5,6 +5,22 @@ description: Turn uncommitted work into a logically ordered sequence of atomic c
 
 # commit
 
+## Resolve destinations first
+
+If the repository has `.agents-control/context.sh`, call it with `sh`.
+Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
+Resolve the concrete path and visibility before editing; never assume a docs folder.
+Use `--scope=private` or `--scope=shared` when the request establishes its audience.
+An invalid configuration or unavailable private workspace stops the write.
+
+Before each commit, run `sh .agents-control/context.sh guard-index` when the
+shared helper exists, otherwise `agents-control guard-index` when the CLI is
+available. Check the complete staged tree, including work staged before this
+invocation. Stop on indexed private content; preserve the user's index. Allow
+explicit staged deletions that remove private files from tracking. Never bypass
+this check because a file appears in Git exclusions.
+
+
 Take the current uncommitted work and commit it as a clean, ordered sequence of atomic commits — each self-consistent, each a conventional-commit.
 
 ## 1. Survey

@@ -1,271 +1,171 @@
 # agents-control
 
-Take back control of your coding agents.
+agents-control is a lightweight toolkit for working with AI coding agents on
+software projects. It organizes project goals, decisions, and tasks in readable
+Markdown and gives agents a small set of workflows for keeping them up to date.
 
-**What it is:** a tool-agnostic system that keeps your project context in a small
-set of readable markdown docs. It gives your coding agent a **manifest** so the
-agent knows which file holds what, plus skills that route work into the right
-file.
+A new session, a different agent, or a new contributor should be able to
+understand the project without reconstructing its history from old chats. You
+keep control of the context, the decisions, and the changes you share.
 
-Works the same in **Claude Code**, **Codex** (local and cloud) and **Cursor**.
+Designed for workflows with **Codex, Claude Code, and Cursor**. See the
+[integration guide](docs/usage.md#tool-integration-status) for setup and current
+verification status.
+
+[Quickstart](#quickstart) · [Setup options](#choose-your-setup) · [Usage guide](docs/usage.md)
+
+## When it helps
+
+Use agents-control when you want to:
+
+- Carry requirements and decisions across coding sessions and different agents.
+- Keep personal tasks and ideas while working in someone else's repository.
+- Give occasional contributors or a team a common way to understand and maintain
+  project knowledge.
+
+It fits both new projects and existing codebases. You can start alone and add
+shared workflows when the team wants them.
+
+## The philosophy
+
+- **Keep context readable.** Project knowledge lives in ordinary Markdown that
+  people can inspect, edit, and review alongside code.
+- **Keep humans in charge.** You choose priorities and approve decisions. Agents
+  work on defined tasks and prepare changes for review.
+- **Keep the system small.** Start with a few core documents. Add others when
+  they serve a purpose, and keep each document focused on its job.
+- **Share deliberately.** Personal work stays private by default. Publish what
+  collaborators need, with one maintained version of shared content.
+
+For substantial work, give each task one owner, a branch or worktree, and clear
+acceptance checks.
 
 ## Quickstart
 
 ### 1. Install once
 
-```bash
+On macOS or Linux with Git available:
+
+```sh
 curl -fsSL https://raw.githubusercontent.com/patrickfleith/agents-control/main/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
-This fetches the toolkit to `~/.agents-control`, puts `agents-control` on your
-`PATH`, and installs the setup skill where each tool looks for it:
-`~/.agents/skills/` for Codex and Cursor, `~/.claude/skills/` for Claude Code.
-Re-run it any time to update.
+This installs the CLI and personal agent skills. The PATH setting above applies
+to your current shell; add it to your shell configuration for future sessions.
+To install a version from your own checkout, follow the
+[local installation instructions](docs/usage.md#install-from-a-local-checkout).
 
-### 2. Set up a repo
+### 2. Set up a project
 
-In the repository you want to bring under agents-control, ask your agent:
+In the Git repository where you want to use it:
 
-| Tool        | How to invoke                |
-|-------------|------------------------------|
-| Claude Code | `/agents-control`            |
-| Codex       | `$agents-control`            |
-| Cursor      | "set up agents-control here" |
-
-The agent runs `agents-control init` to place the files, then does the part a
-script cannot. It reads your codebase, writes a project description into
-`AGENTS.md`, fills `STACK.md` with the frameworks and libraries you use, and cuts
-manifest rows for docs this project will not have.
-
-Prefer to do it yourself? `agents-control init` is the whole file-placement step.
-
-Then commit `.agents/`, `.claude/`, `AGENTS.md`, `CLAUDE.md` and `docs-agents/`.
-Cloud sessions read the skills from your checked-out repository.
-
-### 3. Use it day to day
-
-Your agent reads `AGENTS.md` every session and knows where each doc lives. Drive
-the docs with the bundled skills:
-
-| Skill          | What it does                                             |
-|----------------|----------------------------------------------------------|
-| `commit`       | Turn uncommitted work into atomic, conventional commits. |
-| `log`          | Append to STACK / TASKS / IDEAS / CONCERNS / QUESTIONS.  |
-| `decide`       | Record and manage decisions in DECISIONS.                |
-| `glossary`     | Add and refine agreed terms in GLOSSARY.                 |
-| `write-manual` | Write or update the user manual (SUM) from the codebase. |
-| `unslop`       | Writing rules for anything an agent writes.              |
-
-Invoke them as `/name` in Claude Code, `$name` in Codex, or by asking in plain
-language in Cursor.
-
-## How it works
-
-### The problem it solves
-
-Each doc lacks a fixed **name and location**, and a **purpose** the agent can
-recognise on sight. The number of docs is not the problem. The fix is one
-**manifest** that pins each doc's name, path and what it holds, plus skills that
-route work into the right file. Instructions live in one file, `AGENTS.md`.
-Claude Code reads that file through a generated one-line adapter, so you maintain
-a single set of instructions.
-
-### Two kinds of awareness
-
-| Kind | Examples | How the agent learns about it |
-|---|---|---|
-| **Capabilities** | skills, slash commands, subagents, hooks, MCP servers | **Auto-discovered by the tool.** Commit portable skills in `.agents/skills/`; Codex and Cursor discover that path natively, locally and after a cloud task checks out the repo. Claude Code reads only `.claude/skills/`, so agents-control generates one entry there per skill. |
-| **Docs (your markdown)** | PRD, STACK, TASKS, DECISIONS… | **NOT understood automatically.** The tool sees the file exists but not what it's for. **This is the only thing the manifest is for.** |
-
-### The awareness chain
-
-Every session, each tool loads its instruction file into context. No command, no
-action:
-
-```
-Claude Code                       Codex (local + cloud) · Cursor
------------                       -----------------------------
-CLAUDE.md  ──(@import)──▶ AGENTS.md ◀── read directly
-                             │
-                             ▼
-                   [DOC MANIFEST section]
-              "here are the docs + what each is for"
+```sh
+cd /path/to/your/project
+agents-control init
 ```
 
-- **Claude Code** always reads `CLAUDE.md` at startup. That file is one line,
-  `@AGENTS.md`, which pulls in the whole manifest. It never reads `AGENTS.md`
-  itself.
-- **Codex and Cursor** read `AGENTS.md` directly at startup; Codex cloud tasks
-  receive it when they check out the repository.
-- All three see the manifest every session. The mechanism is simple: the file
-  each tool always loads contains the manifest.
+The default is **private use**. It creates personal instructions and six starter
+documents outside the checkout, preserving the team's files. You get places for
+product requirements, the technology stack, a roadmap, decisions, tasks, and a
+changelog.
 
-| Tool        | Instructions               | Skills                                |
-|-------------|----------------------------|---------------------------------------|
-| Codex       | `AGENTS.md`                | `.agents/skills/`                     |
-| Cursor      | `AGENTS.md`                | `.agents/skills/`                     |
-| Claude Code | `CLAUDE.md` → `@AGENTS.md` | `.claude/skills/` → `.agents/skills/` |
+The CLI creates the structure. To give it useful project context, ask your agent:
 
-### The layout
+> Set up agents-control here in private mode. Run `agents-control context`,
+> read the codebase, and fill my new product requirements and stack documents
+> from the facts you can find. Ask about anything you cannot establish.
 
-```
-AGENTS.md        ← instructions + the manifest table
-docs-agents/     ← the doc content, names fixed by the manifest
-.agents/skills/  ← committed skills, the one source of truth
-CLAUDE.md        ← generated Claude Code adapter: one line, "@AGENTS.md"
-.claude/skills/  ← generated Claude Code adapter: one entry per skill
-```
+The setup skill is also available as `$agents-control` in Codex,
+`/agents-control` in Claude Code, or "set up agents-control here" in Cursor.
 
-A script generates the two `.claude/` entries. Never edit them by hand. Write
-skills in `.agents/skills/` and run `agents-control adapters`.
+For Cursor, paste `~/.agents-control/cursor-user-rule.md` into User Rules to
+request personal context in future sessions. See
+[agent setup and discovery](docs/usage.md#load-context-and-choose-a-destination)
+for the tool-specific details.
 
-Two directories is the minimum. Codex reads `.agents/skills/` and never
-`.claude/skills/`. Claude Code reads `.claude/skills/` and never
-`.agents/skills/`. Cursor reads both. Every skill still exists once on disk,
-because the `.claude/` entries are symlinks into `.agents/skills/`.
+### 3. Try an everyday workflow
 
-### The manifest
+Ask your agent:
 
-The manifest is a compact table inside `AGENTS.md`: each doc's name, path and
-what it captures. It has no permission or ownership columns. It tells the agent
-**which file holds what**, so the agent reads and routes work to the right place.
-The skills and the human in the loop handle edit etiquette, so the manifest
-carries no per-doc rules.
+> Use ac-log to add a personal task: add tests for retry behavior.
 
-```markdown
-## Project docs
+Then try recording a decision with `ac-decide` or defining a project term with
+`ac-glossary`. These personal workflows find the right document through your
+registered project context.
 
-Project docs live in `docs-agents/` (feature docs under `docs-agents/features/<slug>/`).
-Not all exist in every repo. `agents-control init` creates the core set, and the
-skills add the rest on demand. If a doc does not exist yet, do not fabricate one.
-Ask, or create it with the relevant skill.
+`agents-control doctor` checks your setup. It checks files and configuration;
+[automatic tool discovery is still being verified](docs/usage.md#tool-integration-status).
 
-| Doc          | Path                     | What it captures                            | Skill    |
-|--------------|--------------------------|---------------------------------------------|----------|
-| Product spec | docs-agents/PRD.md       | Product-level requirements & context.       | none     |
-| Tech stack   | docs-agents/STACK.md     | Frameworks, libraries, tools.               | `log`    |
-| Roadmap      | docs-agents/ROADMAP.md   | Upcoming features, rework, fixes.           | none     |
-| Decisions    | docs-agents/DECISIONS.md | Pending (TBD) and settled decisions.        | `decide` |
-| Tasks        | docs-agents/TASKS.md     | Repo-level todo dump.                       | `log`    |
-| Changelog    | docs-agents/CHANGELOG.md | Notable changes per released version.       | none     |
-| …            | …                        | one row per doc, full set in the template   | …        |
-```
+## Choose your setup
 
-### Why there is no separate `INDEX.md`
+| Profile | Intended use | What you share |
+| --- | --- | --- |
+| **Private**, the default | Use agents-control on your own in any Git repository | Nothing by default; personal docs and instructions stay outside the checkout |
+| **Selected** | Keep your own workflow and publish useful project knowledge | Only the documents or sections you explicitly choose |
+| **Team** | Adopt common documentation and agent workflows together | Shared docs, project instructions, skills, and portable configuration |
 
-Claude Code can follow `@docs-agents/INDEX.md` imports. **Codex does not follow
-`@path` imports.** It only concatenates `AGENTS.md` files, so a separate manifest
-file would be invisible to Codex. The manifest therefore lives as a **section
-inside `AGENTS.md`**: compact, always loaded, safe across tools. If you ever want
-a table of contents for humans, put it in this README. It is not part of the
-agent's awareness path.
+For a new setup, select a profile with `agents-control init --profile=selected`
+or `agents-control init --profile=team`. Shared documents default to
+`docs-agents-shared/`; you can choose another folder.
 
-### Two rules that keep it honest
+You can begin privately and change later with `agents-control migrate`.
+Migration previews the changes before you apply them. Team adoption keeps
+personal tasks and scratch material available, and one developer's return to
+private use preserves the team's shared setup.
 
-1. **The mechanical work belongs to a script.** `agents-control init` places
-   every file the same way whatever agent drives it. The setup skill keeps only
-   the judgment: what the project is, what it is built with, which docs it will
-   use.
-2. **Skills stay inside the [Agent Skills](https://agentskills.io) spec
-   frontmatter:** `name`, `description`, `license`, `compatibility`, `metadata`,
-   `allowed-tools`. Anything beyond that works in Claude Code, and the other
-   tools drop it without an error. That asymmetry is what this design prevents.
+See [profile defaults](docs/usage.md#private-and-shared-scopes) and
+[migration examples](docs/usage.md#migrate-profiles-and-paths).
 
-## Commands
+## Work with your agent
 
-| Command                   | What it does                                                          |
-|---------------------------|-----------------------------------------------------------------------|
-| `agents-control init`     | Scaffold this repo: skills, docs, `AGENTS.md`, `CLAUDE.md`, adapters. |
-| `agents-control adapters` | Regenerate `.claude/skills/`. Run after adding or renaming a skill.   |
-| `agents-control doctor`   | Show what each tool will discover, and flag what's broken.            |
-| `agents-control update`   | Refresh toolkit skills in this repo; never touches your docs.         |
+A skill is a reusable set of instructions for a particular workflow. The toolkit
+includes six. Personal skills use `ac-` names; a team setup installs the shorter
+names in the repository.
 
-`doctor` is the one worth knowing. It answers "is this repo set up for all three
-tools?" and it catches the failures that raise no error: a `CLAUDE.md` that
-exists but lacks the `@AGENTS.md` import, an adapter that broke on a Windows
-clone, a skill you added without an adapter, frontmatter that Claude Code accepts
-and the others ignore.
+| What you want to do | Personal skill | Team skill |
+| --- | --- | --- |
+| Capture a task, idea, concern, question, or technology choice | `ac-log` | `log` |
+| Record, revise, or revisit a decision | `ac-decide` | `decide` |
+| Define terms and resolve conflicting meanings | `ac-glossary` | `glossary` |
+| Write or update the user manual from the codebase | `ac-write-manual` | `write-manual` |
+| Organize changes into atomic conventional commits | `ac-commit` | `commit` |
+| Keep written text clear and concise | `ac-unslop` | `unslop` |
 
-```
-  TOOL          INSTRUCTIONS             SKILLS
-  Claude Code   CLAUDE.md -> AGENTS.md   6 from .claude/skills/
-  Codex         AGENTS.md                6 from .agents/skills/
-  Cursor        AGENTS.md                6 from .agents/skills/
-```
+Use the personal names for your own work and the repository's skills for shared
+team work. State the audience when a task or document could belong in either
+place. Agents resolve the destination before writing and edit existing entries
+where they already live.
 
-Add `--strict` to make it exit non-zero, which is what you want in CI.
+You can name the workflow in your request, as in the quickstart, or use your
+tool's skill picker.
 
-### Symlinks and Windows
+## How project context stays useful
 
-By default the Claude Code adapter is one symlink per skill, so `.agents/skills/`
-stays the one source of truth. Where symlinks are not available, such as a
-Windows checkout with `core.symlinks=false`, `init` falls back to real copies. It
-records that choice, so re-running `adapters` keeps it.
+Documents give each kind of information a home. `PRD.md` holds product
+requirements, `STACK.md` describes technology choices, and `DECISIONS.md`
+records why choices were made. A feature that spans several sessions can have
+its own requirements and implementation plan. Optional documents appear when
+needed.
 
-The machine that runs `init` decides the mode. If you later clone a symlink-mode
-repo somewhere symlinks do not work, `doctor` reports the broken adapters and
-`agents-control adapters --mode=copy` converts the repo for everyone.
+A short **manifest** maps document names to their locations and purposes.
+Agents use that map and the workflows to read relevant context and update the
+right file. Team context travels with the repository; personal context comes
+from `agents-control context` on your machine.
 
-## Doc types and coverage
+Sharing moves the chosen content into a shared document, where later edits
+happen. Teammates can read that Markdown without installing agents-control.
+Review shared documentation and instruction changes through your normal Git
+process.
 
-Docs sit at two levels:
+## Go further
 
-- **Product level.** PRD says what the product is, for whom, and why. ROADMAP
-  says what is coming. One of each per repo, in `docs-agents/`.
-- **Feature level.** FRD holds the requirements for one feature. PLAN holds how
-  to build it, for a feature big enough to need a plan that survives across
-  sessions. One set per feature, in `docs-agents/features/<slug>/`.
+- [What each document is for](docs/usage.md#document-catalogue)
+- [Share a document or section](docs/usage.md#share-content)
+- [Change profiles, paths, or an older installation](docs/usage.md#migrate-profiles-and-paths)
+- [Recover an interrupted operation](docs/usage.md#recover-an-interrupted-operation)
+- [Ownership, Git, and update behavior](docs/usage.md#ownership-git-and-updates)
+- [Command and configuration reference](docs/usage.md#commands-and-configuration)
+- [Development checks](docs/usage.md#verification-and-development)
 
-Everything else is repo-level: STACK, DECISIONS, TASKS, GLOSSARY, CHANGELOG and
-the rest live directly in `docs-agents/`.
-
-**MVP core, created at setup:** README · PRD · STACK · ROADMAP · DECISIONS ·
-TASKS · CHANGELOG. The skills create everything else on demand, so you never set
-up what you will not use.
-
-Status: ✅ a skill handles file operations · 🚧 partial, `log` can append but a
-dedicated *manage* skill is still needed · 🔴 template exists, no skill yet.
-
-| Doc | What it holds | Status | Skill |
-|---|---|---|---|
-| README | Entry point to the project. | 🔴 | none |
-| SUM | Software and user manual: installation, quickstart, usage per feature. | ✅ | `write-manual` |
-| PRD | Requirements at product level, plus business context, motivation, user needs. | 🔴 | none |
-| STACK | Project-level stack: frameworks, libraries, tools. | 🚧 | `log` |
-| ROADMAP | What is coming: upcoming features, rework, improvements, fixes. | 🔴 | none |
-| FRD | Requirements for one feature. | 🔴 | none |
-| PLAN | How to build one hard feature, carried across sessions. Narrower than the roadmap. | 🔴 | none |
-| GLOSSARY | Agreed terms, disambiguated words, how to read them in this project. | ✅ | `glossary` |
-| IDEAS | Ideas worth capturing before you forget them: a possibility, an investigation. | ✅ | `log` |
-| CONCERNS | Concerns about the project, product or feature, often the seed of a bug report. | ✅ | `log` |
-| EVALUATIONS | For AI/ML projects: how the product and its features are evaluated. | 🔴 | none |
-| TESTS | Test guide for the non-AI/ML parts. | 🔴 | none |
-| QUESTIONS | Questions to answer by research or by asking someone, with the answer once found. | 🚧 | `log` |
-| TASKS | Repo-level todo dump, so small things never become issues. | 🚧 | `log` |
-| DECISIONS | Two sections: TBD for pending, Decided for settled. Architecture, priorities, tools, defaults. | ✅ | `decide` |
-| UXUI | Optional. Guidelines for holding a high bar on user experience and interface, CLI included. | 🔴 | none |
-| CHANGELOG | Chronological, human-readable list of notable changes per released version. | 🔴 | none |
-| DEPLOYMENT | How the project is built, released and run per environment: steps, config, secrets, rollback. | 🔴 | none |
-
-## Development status
-
-Early / MVP. The shared core (`AGENTS.md` + manifest + `docs-agents/`) and the
-workflow skills in `.agents/skills/` are portable across Claude Code, Codex
-(local and cloud) and Cursor.
-
-[`agents-control-initial-idea.md`](agents-control-initial-idea.md) keeps the
-original brief, written before any of this existed.
-
-## Contributing
-
-```bash
-sh tests/test-install.sh                             # end-to-end: install, init, adapters, doctor
-./bin/agents-control doctor --skills-only --strict   # skill portability lint
-```
-
-Skills must stay within the Agent Skills spec frontmatter (see rule 2 above);
-`doctor` fails on anything else.
-
-## License
-
-See [LICENSE](LICENSE).
+Licensed under [MIT](LICENSE).

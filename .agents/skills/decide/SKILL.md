@@ -1,15 +1,30 @@
 ---
 name: decide
-description: Record decisions in docs-agents/DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
+description: Record decisions in DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
 ---
 
 # decide
 
-Maintains `docs-agents/DECISIONS.md`. Keep entries terse.
+## Resolve destinations first
+
+If the repository has `.agents-control/context.sh`, call it with `sh`.
+Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
+Resolve the concrete path and visibility before editing; never assume a docs folder.
+Use `--scope=private` or `--scope=shared` when the request establishes its audience.
+An invalid configuration or unavailable private workspace stops the write.
+
+For new material, run `resolve DECISIONS` with an explicit scope if needed.
+For an existing entry, use `resolve DECISIONS --read` and find it in the returned
+files. Keep edits in the containing file. Ask if identifiers or headings match
+multiple files. Unclassified legacy entries need an explicit migration destination
+before editing. Do not recreate content that was moved to shared storage.
+
+
+Maintains `DECISIONS.md`. Keep entries terse.
 
 ## Locate the file
 
-Edit `docs-agents/DECISIONS.md` in the current project. If it doesn't exist, create it with this structure:
+Edit `DECISIONS.md` at its resolved path. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Decisions
@@ -33,14 +48,14 @@ Date: YYYY-MM-DD HH:MM
 ## Modes
 
 **1. Add a TBD** (open question requiring a decision to move forward, not yet decided). 
-Not to be confused with an open question from `docs-agents/QUESTIONS.md` which do not related to decision.
+Not to be confused with an open question from `QUESTIONS.md` which do not related to decision.
 Append to the `## TBD` list:
 ```
 - **<Shortname> — <pending decision>** — options/context in one line.
 ```
 
 **2. Log a decided decision**
-- Find the highest `DEC-NNN` in `## Decided`; new id = highest + 1, zero-padded to 3 digits.
+- Use `resolve DECISIONS --read` and find the highest `DEC-NNN` across returned files. New id = highest + 1, zero-padded to 3 digits. This avoids reusing IDs after sharing.
 - Prepend the new entry to the top of `## Decided` (newest first).
 - Get the timestamp by running `date "+%Y-%m-%d %H:%M"`.
 - If it resolves a `## TBD` item, remove that TBD line.

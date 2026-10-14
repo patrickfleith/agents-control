@@ -1,50 +1,17 @@
-# AGENTS.md
+# Project instructions
 
-Instructions for AI coding agents working in this repo. Codex and Cursor read
-this file directly, Codex cloud tasks included. Claude Code reads it through the
-one-line `CLAUDE.md` adapter (`@AGENTS.md`). Keep it compact and current.
+Describe the project and its working agreements from the codebase. Preserve
+existing project instructions. Keep project-specific guidance outside the
+agents-control managed block.
 
-## How to work here
+## Documents and workflows
 
-- **What this is:** <one line: what this project is and who it's for>.
-- Before acting, consult the relevant project doc below.
-- Keep changes minimal and in the style of the surrounding code.
+Team setup adds a managed shared manifest here. Resolve document locations with
+`sh .agents-control/context.sh resolve DOC` before writing. Use `--read` to find
+existing entries and edit their containing file. Ask when an entry or task owner
+is ambiguous. Optional documents are created only when needed.
 
-## Writing rules
-
-Everything you write follows `.agents/skills/unslop/SKILL.md`: answers in chat,
-docs, commit messages, PR text. Read it before you write.
-
-## Project docs
-
-Project docs live in `docs-agents/`. Consult the relevant one before acting. If a
-doc does not exist yet, do not fabricate one. Create it with the skill noted below.
-
-| Doc          | Path                     | What it captures                        | Skill          |
-|--------------|--------------------------|-----------------------------------------|----------------|
-| Manual (SUM) | docs-agents/SUM.md       | Install + usage guide for end users.    | `write-manual` |
-| Decisions    | docs-agents/DECISIONS.md | Pending (TBD) and settled decisions.    | `decide`       |
-| Glossary     | docs-agents/GLOSSARY.md  | Agreed term definitions.                | `glossary`     |
-| Stack        | docs-agents/STACK.md     | Frameworks, libraries, tools.           | `log`          |
-| Tasks        | docs-agents/TASKS.md     | Repo-level todo dump.                   | `log`          |
-| Ideas        | docs-agents/IDEAS.md     | Captured ideas / possibilities.         | `log`          |
-| Concerns     | docs-agents/CONCERNS.md  | Risks and concerns to investigate.      | `log`          |
-| Questions    | docs-agents/QUESTIONS.md | Open questions + answers once resolved. | `log`          |
-
-## Capabilities
-
-Skills live in `.agents/skills/`, committed with the repository so local and
-cloud sessions use the same workflows. Codex and Cursor discover that directory
-natively; `.claude/skills/` is a **generated** adapter for Claude Code, which
-reads only its own path.
-
-Never edit `.claude/skills/` by hand. Write the skill in `.agents/skills/` and
-run `agents-control adapters`. Invoke a skill as `/name` in Claude Code, `$name`
-in Codex, or by asking for it in Cursor. Currently available:
-
-- `commit`: turn uncommitted work into atomic conventional commits.
-- `log`: append an entry to STACK, TASKS, IDEAS, CONCERNS, or QUESTIONS.
-- `decide`: record and manage decisions in DECISIONS.
-- `glossary`: add and refine agreed terms in GLOSSARY.
-- `write-manual`: write or update the SUM from the codebase.
-- `unslop`: writing rules for anything an agent writes. Always applies.
+Shared workflows live in `.agents/skills/`; `.claude/skills/` contains generated
+adapters. Read `.agents/skills/unslop/SKILL.md` for writing rules. Preserve edited
+resources and resolve ownership conflicts before updating. Personal guidance and
+private paths come from registered personal context, never this shared file.

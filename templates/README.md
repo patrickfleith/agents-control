@@ -1,23 +1,9 @@
-# <Project Name>
+# Project context
 
-> One sentence: what this is and who it's for.
+- [Product requirements](<docs-agents-shared/PRD.md>)
+- [Tech stack](<docs-agents-shared/STACK.md>)
+- [Roadmap](<docs-agents-shared/ROADMAP.md>)
+- [Decisions](<docs-agents-shared/DECISIONS.md>)
+- [Changelog](<docs-agents-shared/CHANGELOG.md>)
 
-**Why it exists:** one line on the problem it solves.
-
-## Quick start
-
-```bash
-<one-liner install>
-<one-liner run>
-```
-
-## Where to go next
-
-- [SUM](docs-agents/SUM.md) — install & full usage
-- [ROADMAP](docs-agents/ROADMAP.md) — what's next
-
-<details><summary>More (badges, links, license)</summary>
-
-Project-specific details here.
-
-</details>
+Add installation and usage instructions from the actual project.

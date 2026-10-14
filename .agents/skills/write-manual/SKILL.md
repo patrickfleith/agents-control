@@ -1,15 +1,34 @@
 ---
 name: write-manual
-description: Write or update docs-agents/SUM.md — the Software User Manual — from the codebase. Mode 1 (generate) builds a full, detailed SUM from scratch by inventorying every user-facing surface so nothing is missed. Mode 2 (update) revises the SUM against a PR/diff, removing what's obsolete, editing what changed, and adding what's new — precisely and concisely. Triggered by "write the manual", "generate the user manual", "document how to use this", or "update the manual for this PR".
+description: Write or update SUM.md — the Software User Manual — from the codebase. Mode 1 (generate) builds a full, detailed SUM from scratch by inventorying every user-facing surface so nothing is missed. Mode 2 (update) revises the SUM against a PR/diff, removing what's obsolete, editing what changed, and adding what's new — precisely and concisely. Triggered by "write the manual", "generate the user manual", "document how to use this", or "update the manual for this PR".
 ---
 
 # write-manual
 
-Maintains `docs-agents/SUM.md` — the end-user manual: how to install and use the software correctly. Follows the template in `templates/docs-agents/SUM.md`: a **Contents** map up top, then 9 sections (§6–8 optional). This is a **user** manual, not a design doc — no internals, architecture, or rationale.
+## Resolve destinations first
+
+If the repository has `.agents-control/context.sh`, call it with `sh`.
+Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
+Resolve the concrete path and visibility before editing; never assume a docs folder.
+Use `--scope=private` or `--scope=shared` when the request establishes its audience.
+An invalid configuration or unavailable private workspace stops the write.
+
+For new material, run `resolve SUM` with an explicit scope if needed.
+For an existing entry, use `resolve SUM --read` and find it in the returned
+files. Keep edits in the containing file. Ask if identifiers or headings match
+multiple files. Unclassified legacy entries need an explicit migration destination
+before editing. Do not recreate content that was moved to shared storage.
+
+Resolve each context document separately, including GLOSSARY, PRD, and CHANGELOG.
+Read the bundled `assets/SUM.md` relative to this SKILL.md file, regardless of
+whether the skill was loaded from the toolkit, a personal installation, or a clone.
+
+
+Maintains `SUM.md` — the end-user manual: how to install and use the software correctly. Follows the template in `assets/SUM.md` beside this skill: a **Contents** map up top, then 9 sections (§6–8 optional). This is a **user** manual, not a design doc — no internals, architecture, or rationale.
 
 ## The Contents block
 
-A SUM is long, so `docs-agents/SUM.md` opens with a `## Contents` map — the first thing an agent or human reads to jump to the right passage. Build it from the actual headings (never guess), and **rebuild it after every change so it always matches the document** (see Mode 1 Step C and Mode 2 step 4).
+A SUM is long, so `SUM.md` opens with a `## Contents` map — the first thing an agent or human reads to jump to the right passage. Build it from the actual headings (never guess), and **rebuild it after every change so it always matches the document** (see Mode 1 Step C and Mode 2 step 4).
 
 - One entry per `##` section, and one **nested** sub-entry per `### Feature: <name>` subsection under §5, in document order.
 - Each entry is a heading anchor link + ` — ` + a one-line "what's here". For a feature, the one-liner is what the feature does.
@@ -18,9 +37,9 @@ A SUM is long, so `docs-agents/SUM.md` opens with a `## Contents` map — the fi
 
 ## Before writing (both modes)
 
-1. **Read the template** `templates/docs-agents/SUM.md` for the target structure.
-2. **Read `docs-agents/GLOSSARY.md`** — use its canonical terms verbatim; never invent a synonym for something the glossary already names.
-3. **Skim sibling docs for context, not for copying:** `docs-agents/PRD.md` (what & who it's for), `docs-agents/features/*` (feature intent), `README.md`, `docs-agents/CHANGELOG.md`. The SUM describes *how to use*, the PRD/FRD describe *what & why* — don't leak the latter in.
+1. **Read the template** `assets/SUM.md` beside this skill for the target structure.
+2. **Read `GLOSSARY.md`** — use its canonical terms verbatim; never invent a synonym for something the glossary already names.
+3. **Skim sibling docs for context, not for copying:** `PRD.md` (what & who it's for), `features/<slug>/FRD.md` and `PLAN.md` at the resolved locations (feature intent), `README.md`, `CHANGELOG.md`. The SUM describes *how to use*, the PRD/FRD describe *what & why* — don't leak the latter in.
 
 ## Mode 1 — Generate a full SUM from the codebase
 
@@ -36,7 +55,7 @@ Goal: a complete manual with **no blind spots**. Blind spots come from documenti
 | API / endpoints | route definitions, OpenAPI/proto specs, exported public functions |
 | Config & env vars | config schema, `.env.example`, settings files, defaults |
 | Required files / services / credentials | DB, external APIs, secrets, tokens the software needs to run |
-| Features | `docs-agents/features/*` and the code that implements them |
+| Features | `features/<slug>/FRD.md` and `PLAN.md` at the resolved locations and the code that implements them |
 | Error/diagnostic messages | raised errors, exit codes, log strings a user would see |
 | Prerequisites & platforms | supported OS/runtime, version constraints, dependencies |
 

@@ -22,6 +22,11 @@ jobs:
           sh -n install.sh
           sh -n bin/agents-control
           sh -n tests/test-install.sh
+          sh -n tests/test-recovery.sh
+          sh -n lib/context.sh
+          sh -n lib/operations.sh
+          AC_MARKDOWN_MODE=ids awk -f lib/markdown.awk /dev/null
+          awk -f lib/replace.awk /dev/null
 
       - name: Skill portability
         # Skills must stay inside the Agent Skills spec frontmatter, or they
@@ -30,3 +35,6 @@ jobs:
 
       - name: End-to-end
         run: sh tests/test-install.sh
+
+      - name: Recovery checkpoints
+        run: sh tests/test-recovery.sh

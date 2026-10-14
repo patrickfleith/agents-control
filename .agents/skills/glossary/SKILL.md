@@ -1,15 +1,30 @@
 ---
 name: glossary
-description: Manage docs-agents/GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
+description: Manage GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
 ---
 
 # glossary
 
-Maintains `docs-agents/GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
+## Resolve destinations first
+
+If the repository has `.agents-control/context.sh`, call it with `sh`.
+Otherwise use the installed `agents-control` CLI. Both expose `resolve DOC`.
+Resolve the concrete path and visibility before editing; never assume a docs folder.
+Use `--scope=private` or `--scope=shared` when the request establishes its audience.
+An invalid configuration or unavailable private workspace stops the write.
+
+For new material, run `resolve GLOSSARY` with an explicit scope if needed.
+For an existing entry, use `resolve GLOSSARY --read` and find it in the returned
+files. Keep edits in the containing file. Ask if identifiers or headings match
+multiple files. Unclassified legacy entries need an explicit migration destination
+before editing. Do not recreate content that was moved to shared storage.
+
+
+Maintains `GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
 
 ## Locate the file
 
-Edit `docs-agents/GLOSSARY.md`. If it doesn't exist, create it with this structure:
+Edit `GLOSSARY.md` at its resolved path. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Glossary
