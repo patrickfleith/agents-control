@@ -132,24 +132,67 @@ has "$WORK/moved-context" "$WORK/moved project/docs-agents-private"
 run "$AC" doctor
 ok 'moving a checkout keeps context available without registration'
 
-new_repo worktrees
+new_repo 'main tree'
 git commit --allow-empty -qm initial
-git worktree add -qb other "$WORK/other tree"
 run "$AC" init
 first=$("$AC" resolve TASKS)
-cd "$WORK/other tree"
+[ "$first" = "$REPO/docs-agents-private/TASKS.md" ] || fatal 'wrong main checkout path'
+printf 'shared note\n' >> "$first"
+git worktree add -qb other "$WORK/other tree"
+mkdir "$WORK/other tree/sub dir"
+cd "$WORK/other tree/sub dir"
+[ "$("$AC" resolve TASKS)" = "$first" ] || fatal 'worktree resolves a different TASKS path'
+"$AC" context > "$WORK/tree-context"
+has "$WORK/tree-context" "Documents: $REPO/docs-agents-private"
+has "$WORK/tree-context" 'agents-control:private'
+"$AC" resolve TASKS --read > "$WORK/tree-tasks"
+has "$WORK/tree-tasks" 'shared note'
 run "$AC" init
-second=$("$AC" resolve TASKS)
-[ "$first" != "$second" ] || fatal 'worktrees share notes'
-printf 'other note\n' >> "$second"
-if grep -Fq 'other note' "$first"; then fatal 'worktree notes mixed'; fi
+run "$AC" doctor
+absent "$WORK/other tree/docs-agents-private"
+printf 'worktree note\n' >> "$("$AC" resolve TASKS)"
+has "$first" 'worktree note'
+ok 'linked worktrees share the main checkout notes from any subdirectory'
+
+# guard-index checks the checkout where the commit happens.
+cd "$WORK/other tree"
+mkdir docs-agents-private
+printf 'stray\n' > docs-agents-private/TASKS.md
+run "$AC" doctor
+has "$WORK/last.log" 'is unused'
 git add -f docs-agents-private/TASKS.md
+reject "$AC" guard-index
 cd "$REPO"
+run "$AC" guard-index
 reject "$AC" init
 cd "$WORK/other tree"
 git rm --cached -q docs-agents-private/TASKS.md
+rm -r docs-agents-private
+run "$AC" guard-index
+git -C "$REPO" add -f docs-agents-private/TASKS.md
+run "$AC" guard-index
+reject "$AC" doctor
+git -C "$REPO" rm --cached -q docs-agents-private/TASKS.md
+run "$AC" doctor
+ok 'guard-index checks the committing checkout and doctor also checks the shared notes'
+
+cd "$REPO"
+git worktree remove "$WORK/other tree"
+absent "$WORK/other tree"
+has "$first" 'worktree note'
+run "$AC" doctor
+ok 'removing a linked worktree keeps the shared notes'
+
+# A bare main repository has no working tree. Each checkout keeps its own notes.
+git init -q --bare "$WORK/bare repo.git"
+git -C "$REPO" push -q "$WORK/bare repo.git" HEAD:main
+git -C "$WORK/bare repo.git" worktree add -q "$WORK/bare tree" main
+cd "$WORK/bare tree"
 run "$AC" init
-ok 'linked worktrees keep separate notes and protect tracked files before adding common exclusions'
+has "$WORK/last.log" 'main repository is bare'
+[ "$("$AC" resolve TASKS)" = "$WORK/bare tree/docs-agents-private/TASKS.md" ] || fatal 'wrong bare worktree path'
+run "$AC" doctor
+ok 'worktrees of a bare repository fall back to their own notes'
 
 new_repo unconfigured
 "$AC" context > "$WORK/empty"

@@ -12,6 +12,7 @@ usage() {
 agents-control: private notes for your coding agents.
 
   init              Create docs-agents-private/ and exclude it from Git.
+                    Linked worktrees share the folder in the main worktree.
   context           Print personal instructions for this checkout. Read-only.
   resolve DOC       Print a private document path. Does not create the document.
                     --read prints existing contents; --path also means path only.
@@ -19,7 +20,7 @@ agents-control: private notes for your coding agents.
   doctor            Check this checkout. --skills-only checks toolkit sources.
   version           Print the installed version.
 
-Run init once per checkout. No profiles or configuration required.
+Run init once per repository. No profiles or configuration required.
 DOC
 }
 init() {
@@ -45,17 +46,18 @@ init() {
   fi
   # Append a literal root rule locally. Existing exclusions stay intact.
   if ! grep -Fxq '/docs-agents-private/' "$AC_EXCLUDE" 2>/dev/null ||
-     ! git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/; then
+     ! git -C "$AC_MAIN" check-ignore -q --no-index docs-agents-private/; then
     mkdir -p "$(dirname "$AC_EXCLUDE")"
     printf '\n# Private agents-control documents\n/docs-agents-private/\n' >> "$AC_EXCLUDE"
   fi
-  git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/ || ac_die 'Git does not exclude private documents'
+  git -C "$AC_MAIN" check-ignore -q --no-index docs-agents-private/ || ac_die 'Git does not exclude private documents'
   mkdir -p "$AC_PRIVATE"
   for doc in $AC_CORE; do
     [ -f "$AC_PRIVATE/$doc.md" ] || cp "$TOOLKIT_ROOT/templates/docs-agents/$doc.md" "$AC_PRIVATE/$doc.md"
   done
   # Write the setup marker last. Rerunning completes an interrupted setup.
   [ -f "$AC_PRIVATE/AGENTS.md" ] || cp "$TOOLKIT_ROOT/templates/private-AGENTS.md" "$AC_PRIVATE/AGENTS.md"
+  ac_warn_layout
   printf 'Ready: %s\nAsk your agent to run agents-control context and fill PRD.md and STACK.md from the codebase.\n' "$AC_PRIVATE"
 }
 check_skills() {
@@ -71,11 +73,15 @@ check_skills() {
 doctor() {
   ac_require_setup
   ac_guard_index
-  git -C "$AC_REPO" check-ignore -q --no-index docs-agents-private/ || ac_die 'private documents are not excluded; rerun init'
+  [ "$AC_MAIN" = "$AC_REPO" ] || ac_guard_index "$AC_MAIN"
+  for checkout in "$AC_REPO" "$AC_MAIN"; do
+    git -C "$checkout" check-ignore -q --no-index docs-agents-private/ || ac_die 'private documents are not excluded; rerun init'
+  done
   for doc in $AC_CORE; do
     ac_safe_path "$AC_PRIVATE/$doc.md"
     [ -f "$AC_PRIVATE/$doc.md" ] || ac_die "missing $doc.md; rerun init"
   done
+  ac_warn_layout
   printf 'Private documents and Git exclusion OK: %s\n' "$AC_PRIVATE"
 }
 action=${1:-help}

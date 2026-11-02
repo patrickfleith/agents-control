@@ -24,11 +24,27 @@ ac_safe_path() {
     fi
   done
 }
+# Linked worktrees share the notes in the main worktree. Git lists it first.
+# A bare main repository has no working tree, so each checkout keeps its own notes.
+ac_main_worktree() {
+  ac_list=$(git -C "$AC_REPO" worktree list --porcelain) || ac_die 'cannot list worktrees'
+  ac_main=$(printf '%s\n' "$ac_list" | sed -n '1s/^worktree //p')
+  if printf '%s\n' "$ac_list" | awk 'NF == 0 {exit} $0 == "bare" {bare = 1} END {exit !bare}'; then
+    AC_MAIN=$AC_REPO AC_BARE=1
+    return
+  fi
+  ac_text_path "$ac_main"
+  [ -d "$ac_main" ] || ac_die "main worktree not found: $ac_main. Run git worktree repair"
+  AC_MAIN=$(cd "$ac_main" && pwd -P) || ac_die 'cannot read main worktree'
+  ac_text_path "$AC_MAIN"
+}
 ac_load() {
   AC_REPO=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
   AC_REPO=$(cd "$AC_REPO" && pwd -P) || ac_die 'cannot read checkout root'
   ac_text_path "$AC_REPO"
-  AC_PRIVATE=$AC_REPO/docs-agents-private
+  AC_BARE=
+  ac_main_worktree
+  AC_PRIVATE=$AC_MAIN/docs-agents-private
   ac_common=$(git rev-parse --git-common-dir) || ac_die 'cannot find Git metadata'
   AC_COMMON=$(cd "$ac_common" && pwd -P) || ac_die 'cannot read Git metadata'
   AC_EXCLUDE=$AC_COMMON/info/exclude
@@ -43,7 +59,7 @@ ac_registered() {
     grep -Fxq '<!-- agents-control:private -->' "$AC_PRIVATE/AGENTS.md"
 }
 ac_require_setup() {
-  ac_registered || ac_die 'run agents-control init in this checkout first'
+  ac_registered || ac_die 'run agents-control init in this repository first'
 }
 ac_doc() (
   ac_name=${1%.md}
@@ -57,8 +73,17 @@ ac_doc() (
     *) ac_die "unknown document: $1" ;;
   esac
 )
+# Notes left in a linked worktree by an older version are no longer read.
+ac_warn_layout() {
+  if [ -n "$AC_BARE" ]; then
+    printf 'note: the main repository is bare, so this checkout keeps its own notes\n' >&2
+  elif [ "$AC_REPO" != "$AC_MAIN" ] && ac_exists "$AC_REPO/docs-agents-private"; then
+    printf 'note: %s/docs-agents-private is unused. Linked worktrees share %s. Move its notes there.\n' "$AC_REPO" "$AC_PRIVATE" >&2
+  fi
+}
+# Check the index of one checkout. Defaults to the current one, where commits happen.
 ac_guard_index() {
-  ac_index=$(git -C "$AC_REPO" ls-files -- ':(icase,literal)docs-agents-private') || ac_die 'cannot read Git index'
+  ac_index=$(git -C "${1:-$AC_REPO}" ls-files -- ':(icase,literal)docs-agents-private') || ac_die 'cannot read Git index'
   [ -z "$ac_index" ] || ac_die "private documents are in the Git index. Remove them from tracking before committing:\n$ac_index"
 }
 ac_context() {
