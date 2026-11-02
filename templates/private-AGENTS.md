@@ -1,10 +1,12 @@
 <!-- agents-control:private -->
 # Personal project context
 
-These documents are the user's private working notes for this checkout.
+These documents are the user's private working notes for this repository.
+Linked worktrees share them.
 Follow the project's instructions and keep personal notes in this folder.
 Run `agents-control resolve DOC` to get a document path before writing.
 Read relevant documents, then update them when the user asks or the work needs it.
+Other agents may write at the same time. Append to the notes. Do not rewrite them.
 Ask about facts or decisions you cannot establish. Keep optional documents on demand.
 
 | Document | Purpose |

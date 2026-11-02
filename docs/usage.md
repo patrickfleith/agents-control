@@ -2,7 +2,7 @@
 
 ## One private folder
 
-Each checkout has its own `docs-agents-private/`:
+Each repository has one `docs-agents-private/` in its main checkout:
 
 ```text
 docs-agents-private/
@@ -18,7 +18,13 @@ docs-agents-private/
 Setup adds `/docs-agents-private/` to the repository's local Git exclusion file.
 It preserves the project's instructions, docs, skills and `.gitignore`.
 No profiles, shared folders or project configuration are needed.
-Linked worktrees get separate notes. Moving a checkout preserves its setup.
+Linked worktrees share the folder in the main checkout. A new worktree sees the
+existing notes, and removing a worktree keeps them. If the main repository is
+bare, it has no working tree, so each linked worktree keeps its own notes.
+Moving a checkout preserves its setup.
+
+Parallel agents may write the same notes. Append new entries. Do not rewrite a
+whole document.
 
 Keep goals and requirements in PRD, upcoming work in ROADMAP, and concrete
 personal work in TASKS. Record decisions with their reasons so another session
@@ -106,6 +112,11 @@ after reviewing name conflicts. Keep the new private `AGENTS.md`; copy useful
 personal instructions into it. For a nested layout, move the contents of the old
 `docs/` folder. Old external notes under `~/.agents-control/repos/` remain intact.
 Ask your agent to help with the move if needed.
+
+Older releases kept separate notes in each linked worktree. Those folders stay
+in place, but agents-control no longer reads them. `init` and `doctor` print a
+note when they find one. Merge its notes into the main checkout folder, then
+delete it.
 
 The installer retires its old unedited personal `agents-control` setup skill.
 The setup skill is now `ac-init`. Edited old skills are preserved and reported.

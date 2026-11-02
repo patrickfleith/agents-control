@@ -127,8 +127,8 @@ your-project/
 ```
 
 `init` creates the structure. You and your agent supply the project knowledge.
-Rerunning setup preserves your existing notes. Each checkout, including linked
-worktrees, has its own private folder.
+Rerunning setup preserves your existing notes. Linked worktrees share the private
+folder in the main checkout, so notes survive when you remove a worktree.
 
 Optional documents cover ideas, concerns, questions, terminology, a user manual,
 tests, evaluations, interface guidelines and deployment. Larger features can have
@@ -147,7 +147,7 @@ next step is usually more useful than a transcript of the conversation.
 
 ### Updates and further reading
 
-Rerun the installer to update. Your private notes stay in each checkout. Locally
+Rerun the installer to update. Your private notes stay in the main checkout. Locally
 edited skills or conflicting files stop the update so you can review them.
 
 - [Commands and document types](docs/usage.md)
