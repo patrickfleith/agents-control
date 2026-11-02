@@ -23,18 +23,25 @@ agents-control: private notes for your coding agents.
 Run init once per repository. No profiles or configuration required.
 DOC
 }
+untracked_in() {
+  indexed=$(git -C "$1" ls-files -- ':(icase,literal)docs-agents-private') || ac_die 'cannot check worktree index'
+  [ -z "$indexed" ] || ac_die "docs-agents-private is tracked in $1; setup cannot hide project files"
+}
 init() {
   ac_safe_path "$AC_EXCLUDE"
   if ac_exists "$AC_EXCLUDE" && [ ! -f "$AC_EXCLUDE" ]; then ac_die 'Git exclude must be a regular file'; fi
   # Exclusions are common to linked worktrees. Refuse tracked content in any of them.
+  # Separate Git metadata is listed in place of the main checkout, so check this checkout too.
+  untracked_in "$AC_REPO"
   ac_worktrees=$(git -C "$AC_REPO" worktree list --porcelain) || ac_die 'cannot list worktrees'
   printf '%s\n' "$ac_worktrees" | while IFS= read -r line; do
     case $line in worktree\ *)
       checkout=${line#worktree }
       ac_text_path "$checkout"
       [ -d "$checkout" ] || continue
-      indexed=$(git -C "$checkout" ls-files -- ':(icase,literal)docs-agents-private') || ac_die 'cannot check worktree index'
-      [ -z "$indexed" ] || ac_die "docs-agents-private is tracked in $checkout; setup cannot hide project files"
+      # The metadata directory has no index to check.
+      [ "$(git -C "$checkout" rev-parse --is-inside-work-tree 2>/dev/null)" = true ] || continue
+      untracked_in "$checkout"
       ;; esac
   done
   for doc in AGENTS $AC_CORE; do
@@ -74,9 +81,8 @@ doctor() {
   ac_require_setup
   ac_guard_index
   [ "$AC_MAIN" = "$AC_REPO" ] || ac_guard_index "$AC_MAIN"
-  for checkout in "$AC_REPO" "$AC_MAIN"; do
-    git -C "$checkout" check-ignore -q --no-index docs-agents-private/ || ac_die 'private documents are not excluded; rerun init'
-  done
+  # Only the shared notes location matters. Linked checkouts may carry other ignore rules.
+  git -C "$AC_MAIN" check-ignore -q --no-index docs-agents-private/ || ac_die 'private documents are not excluded; rerun init'
   for doc in $AC_CORE; do
     ac_safe_path "$AC_PRIVATE/$doc.md"
     [ -f "$AC_PRIVATE/$doc.md" ] || ac_die "missing $doc.md; rerun init"

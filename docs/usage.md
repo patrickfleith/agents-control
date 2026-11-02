@@ -20,7 +20,8 @@ It preserves the project's instructions, docs, skills and `.gitignore`.
 No profiles, shared folders or project configuration are needed.
 Linked worktrees share the folder in the main checkout. A new worktree sees the
 existing notes, and removing a worktree keeps them. If the main repository is
-bare, it has no working tree, so each linked worktree keeps its own notes.
+bare, or was created with `git init --separate-git-dir`, Git cannot locate a
+main checkout, so each linked worktree keeps its own notes.
 Moving a checkout preserves its setup.
 
 Parallel agents may write the same notes. Append new entries. Do not rewrite a

@@ -159,7 +159,7 @@ cd "$WORK/other tree"
 mkdir docs-agents-private
 printf 'stray\n' > docs-agents-private/TASKS.md
 run "$AC" doctor
-has "$WORK/last.log" 'is unused'
+has "$WORK/last.log" 'is no longer read'
 git add -f docs-agents-private/TASKS.md
 reject "$AC" guard-index
 cd "$REPO"
@@ -183,6 +183,22 @@ has "$first" 'worktree note'
 run "$AC" doctor
 ok 'removing a linked worktree keeps the shared notes'
 
+# Upgrade: an earlier version kept notes in a linked worktree and never set up the main checkout.
+new_repo 'upgrade main'
+git commit --allow-empty -qm initial
+git worktree add -qb old "$WORK/upgrade tree"
+mkdir "$WORK/upgrade tree/docs-agents-private"
+cp "$SRC/templates/private-AGENTS.md" "$WORK/upgrade tree/docs-agents-private/AGENTS.md"
+printf 'old worktree note\n' > "$WORK/upgrade tree/docs-agents-private/TASKS.md"
+cd "$WORK/upgrade tree"
+"$AC" context > "$WORK/upgrade-context"
+has "$WORK/upgrade-context" 'agents-control upgrade needed'
+has "$WORK/upgrade-context" "$REPO/docs-agents-private"
+mv docs-agents-private "$REPO/docs-agents-private"
+"$AC" context > "$WORK/upgrade-context"
+if grep -Fq 'upgrade needed' "$WORK/upgrade-context"; then fatal 'upgrade notice after moving notes'; fi
+ok 'notes from an earlier version in a linked worktree are reported until moved'
+
 # A bare main repository has no working tree. Each checkout keeps its own notes.
 git init -q --bare "$WORK/bare repo.git"
 git -C "$REPO" push -q "$WORK/bare repo.git" HEAD:main
@@ -193,6 +209,48 @@ has "$WORK/last.log" 'main repository is bare'
 [ "$("$AC" resolve TASKS)" = "$WORK/bare tree/docs-agents-private/TASKS.md" ] || fatal 'wrong bare worktree path'
 run "$AC" doctor
 ok 'worktrees of a bare repository fall back to their own notes'
+
+# A linked checkout may override ignore rules. Only the shared location must be excluded.
+cd "$REPO"
+git worktree add -qb ignore-override "$WORK/override tree"
+cd "$WORK/override tree"
+printf '!/docs-agents-private/\n' > .gitignore
+run "$AC" init
+run "$AC" doctor
+cd "$REPO"
+git worktree remove --force "$WORK/override tree"
+ok 'doctor checks exclusion where the shared notes live'
+
+# With separate Git metadata, Git lists the metadata directory as the main worktree.
+git init -q --separate-git-dir "$WORK/split meta" "$WORK/split main"
+cd "$WORK/split main"
+git commit --allow-empty -qm initial
+run "$AC" init
+split=$("$AC" resolve TASKS)
+[ "$split" = "$WORK/split main/docs-agents-private/TASKS.md" ] || fatal 'wrong separate metadata path'
+"$AC" context > "$WORK/split-context"
+has "$WORK/split-context" 'agents-control:private'
+run "$AC" doctor
+git worktree add -qb split-other "$WORK/split other"
+cd "$WORK/split other"
+run "$AC" init
+has "$WORK/last.log" 'Git does not record the main checkout'
+[ "$("$AC" resolve TASKS)" = "$WORK/split other/docs-agents-private/TASKS.md" ] || fatal 'wrong separate metadata worktree path'
+run "$AC" doctor
+ok 'separate Git metadata keeps notes in each checkout'
+
+git init -q --separate-git-dir "$WORK/split tracked meta" "$WORK/split tracked"
+cd "$WORK/split tracked"
+mkdir docs-agents-private
+printf 'team-owned file\n' > docs-agents-private/TASKS.md
+git add -A
+git commit -qm initial
+cp "$WORK/split tracked meta/info/exclude" "$WORK/split-exclude.before"
+reject "$AC" init
+has "$WORK/last.log" 'docs-agents-private is tracked'
+same "$WORK/split tracked meta/info/exclude" "$WORK/split-exclude.before"
+absent docs-agents-private/AGENTS.md
+ok 'separate Git metadata setup refuses tracked notes in the main checkout'
 
 new_repo unconfigured
 "$AC" context > "$WORK/empty"
