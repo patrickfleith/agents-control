@@ -25,6 +25,41 @@ same() { cmp -s "$1" "$2" || fatal "files differ: $1 $2"; }
 ok() { PASS=$((PASS+1)); printf 'ok %s - %s\n' "$PASS" "$*"; }
 new_repo() { REPO=$WORK/$1; mkdir -p "$REPO"; cd "$REPO"; git init -q; }
 
+# Reproduce the launcher layout installed before ownership records existed.
+(
+  export AGENTS_CONTROL_USER_HOME="$WORK/legacy user"
+  export AGENTS_CONTROL_HOME="$AGENTS_CONTROL_USER_HOME/.agents-control"
+  export AGENTS_CONTROL_CODEX_HOME="$AGENTS_CONTROL_USER_HOME/.codex"
+  export AGENTS_CONTROL_BIN_DIR="$AGENTS_CONTROL_USER_HOME/.local/bin"
+  mkdir -p "$AGENTS_CONTROL_HOME/bin" "$AGENTS_CONTROL_BIN_DIR" "$AGENTS_CONTROL_HOME/repos/keep"
+  printf 'legacy CLI\n' > "$AGENTS_CONTROL_HOME/bin/agents-control"
+  printf 'private note\n' > "$AGENTS_CONTROL_HOME/repos/keep/note"
+  cp "$AGENTS_CONTROL_HOME/bin/agents-control" "$WORK/legacy-cli.before"
+  launcher=$AGENTS_CONTROL_BIN_DIR/agents-control
+  ln -s "$WORK/unrelated-cli" "$launcher"
+  reject sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$WORK/unrelated-cli" ] || fatal 'unrelated launcher replaced'
+  absent "$AGENTS_CONTROL_HOME/toolkit"
+  absent "$AGENTS_CONTROL_HOME/install.tsv"
+  rm "$launcher"
+  ln -s "$AGENTS_CONTROL_HOME/bin/agents-control" "$launcher"
+  run sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$AGENTS_CONTROL_HOME/toolkit/bin/agents-control" ] || fatal 'legacy launcher not upgraded'
+  run "$launcher" doctor --skills-only
+  same "$AGENTS_CONTROL_HOME/bin/agents-control" "$WORK/legacy-cli.before"
+  has "$AGENTS_CONTROL_HOME/repos/keep/note" 'private note'
+  cp "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+  run sh "$SRC/install.sh"
+  same "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+  # Once ownership is recorded, a changed link must still fail the update.
+  rm "$launcher"
+  ln -s "$AGENTS_CONTROL_HOME/bin/agents-control" "$launcher"
+  reject sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$AGENTS_CONTROL_HOME/bin/agents-control" ] || fatal 'edited launcher replaced'
+  same "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+)
+ok 'legacy launcher upgrades without an ownership record and conflicting launchers stay intact'
+
 mkdir -p "$AGENTS_CONTROL_CODEX_HOME" "$WORK/user/.claude" "$WORK/state/repos/keep"
 printf 'my global instructions without LF' > "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md"
 printf 'my Claude instructions\n' > "$WORK/user/.claude/CLAUDE.md"

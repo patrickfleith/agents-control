@@ -44,6 +44,12 @@ if [ -f "$RECORD" ]; then
   awk -F '\t' '/^#/ {next} NF!=3 || seen[$1]++ || $2 !~ /^[FDLB]$/ || $3 !~ /^(file|dir|link|block):[0-9]+:[0-9]+$/ {exit 1}' "$RECORD" || ac_die 'invalid install ownership record'
   cp "$RECORD" "$TMP/record"
 else printf '# agents-control ownership schema=1\n' > "$TMP/record"; fi
+# Releases before ownership records linked the launcher directly into AC_HOME.
+# Adopt only that exact legacy link; keep all other conflict checks in place.
+if [ ! -f "$RECORD" ] && [ -L "$BIN_DIR/agents-control" ] &&
+   [ "$(readlink "$BIN_DIR/agents-control")" = "$AC_HOME/bin/agents-control" ]; then
+  printf '%s\tL\t%s\n' "$BIN_DIR/agents-control" "$(ac_fingerprint "$BIN_DIR/agents-control" L)" >> "$TMP/record"
+fi
 : > "$TMP/plan"
 plan() {
   destination=$1; payload=$2; kind=$3
