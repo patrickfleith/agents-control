@@ -1,6 +1,6 @@
 ---
-name: unslop
-description: Rules for AI-written text. Must always apply.
+name: ac-unslop
+description: Keep agents-control text clear and concise. Use when the user asks for ac-unslop or writes private agents-control documents.
 ---
 
 # Unslop

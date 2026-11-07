@@ -1,274 +1,380 @@
 #!/bin/sh
-# End-to-end tests for install.sh and bin/agents-control.
-# No framework: every check is a shell assertion. Run from anywhere:
-#
-#   sh tests/test-install.sh
-#
+# End-to-end private setup and installer behavior in disposable directories.
 set -eu
-
 SRC=$(cd "$(dirname "$0")/.." && pwd -P)
 WORK=$(mktemp -d)
+WORK=$(cd "$WORK" && pwd -P)
+trap 'rm -rf "$WORK"' EXIT HUP INT TERM
+export AGENTS_CONTROL_SOURCE=$SRC
+export AGENTS_CONTROL_USER_HOME=$WORK/user
+export AGENTS_CONTROL_HOME=$WORK/state
+export AGENTS_CONTROL_CODEX_HOME=$WORK/user/.codex
+export AGENTS_CONTROL_BIN_DIR=$WORK/user/bin
+export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
+export GIT_AUTHOR_NAME=Test GIT_AUTHOR_EMAIL=test@example.invalid
+export GIT_COMMITTER_NAME=Test GIT_COMMITTER_EMAIL=test@example.invalid
+# Host-level ignores must not change the expected Git behavior.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.excludesFile GIT_CONFIG_VALUE_0=/dev/null
 PASS=0
-FAIL=0
+fatal() { printf 'FAIL: %s\n' "$*" >&2; cat "$WORK/last.log" >&2; exit 1; }
+run() { "$@" > "$WORK/last.log" 2>&1 || fatal "command failed: $*"; }
+reject() { if "$@" > "$WORK/last.log" 2>&1; then fatal "command unexpectedly succeeded: $*"; fi; }
+has() { grep -Fq "$2" "$1" || fatal "missing text in $1: $2"; }
+absent() { [ ! -e "$1" ] && [ ! -L "$1" ] || fatal "unexpected path: $1"; }
+same() { cmp -s "$1" "$2" || fatal "files differ: $1 $2"; }
+ok() { PASS=$((PASS+1)); printf 'ok %s - %s\n' "$PASS" "$*"; }
+new_repo() { REPO=$WORK/$1; mkdir -p "$REPO"; cd "$REPO"; git init -q; }
 
-if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
-  RED=$(printf '\033[31m'); GRN=$(printf '\033[32m'); B=$(printf '\033[1m'); R=$(printf '\033[0m')
-else
-  RED=''; GRN=''; B=''; R=''
-fi
+# Reproduce the launcher layout installed before ownership records existed.
+(
+  export AGENTS_CONTROL_USER_HOME="$WORK/legacy user"
+  export AGENTS_CONTROL_HOME="$AGENTS_CONTROL_USER_HOME/.agents-control"
+  export AGENTS_CONTROL_CODEX_HOME="$AGENTS_CONTROL_USER_HOME/.codex"
+  export AGENTS_CONTROL_BIN_DIR="$AGENTS_CONTROL_USER_HOME/.local/bin"
+  mkdir -p "$AGENTS_CONTROL_HOME/bin" "$AGENTS_CONTROL_BIN_DIR" "$AGENTS_CONTROL_HOME/repos/keep"
+  printf 'legacy CLI\n' > "$AGENTS_CONTROL_HOME/bin/agents-control"
+  printf 'private note\n' > "$AGENTS_CONTROL_HOME/repos/keep/note"
+  cp "$AGENTS_CONTROL_HOME/bin/agents-control" "$WORK/legacy-cli.before"
+  launcher=$AGENTS_CONTROL_BIN_DIR/agents-control
+  ln -s "$WORK/unrelated-cli" "$launcher"
+  reject sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$WORK/unrelated-cli" ] || fatal 'unrelated launcher replaced'
+  absent "$AGENTS_CONTROL_HOME/toolkit"
+  absent "$AGENTS_CONTROL_HOME/install.tsv"
+  rm "$launcher"
+  ln -s "$AGENTS_CONTROL_HOME/bin/agents-control" "$launcher"
+  run sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$AGENTS_CONTROL_HOME/toolkit/bin/agents-control" ] || fatal 'legacy launcher not upgraded'
+  run "$launcher" doctor --skills-only
+  same "$AGENTS_CONTROL_HOME/bin/agents-control" "$WORK/legacy-cli.before"
+  has "$AGENTS_CONTROL_HOME/repos/keep/note" 'private note'
+  cp "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+  run sh "$SRC/install.sh"
+  same "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+  # Once ownership is recorded, a changed link must still fail the update.
+  rm "$launcher"
+  ln -s "$AGENTS_CONTROL_HOME/bin/agents-control" "$launcher"
+  reject sh "$SRC/install.sh"
+  [ "$(readlink "$launcher")" = "$AGENTS_CONTROL_HOME/bin/agents-control" ] || fatal 'edited launcher replaced'
+  same "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/legacy-record.before"
+)
+ok 'legacy launcher upgrades without an ownership record and conflicting launchers stay intact'
 
-cleanup() { rm -r -f "$WORK"; }
-trap cleanup EXIT INT TERM
+mkdir -p "$AGENTS_CONTROL_CODEX_HOME" "$WORK/user/.claude" "$WORK/state/repos/keep"
+printf 'my global instructions without LF' > "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md"
+printf 'my Claude instructions\n' > "$WORK/user/.claude/CLAUDE.md"
+printf 'old private data\n' > "$WORK/state/repos/keep/note"
+run sh "$SRC/install.sh"
+AC=$WORK/user/bin/agents-control
+run "$AC" version
+has "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md" 'my global instructions without LF'
+has "$WORK/user/.claude/CLAUDE.md" 'my Claude instructions'
+has "$WORK/state/repos/keep/note" 'old private data'
+for skill in ac-init ac-log ac-decide ac-glossary ac-write-manual ac-commit ac-unslop; do
+  has "$WORK/user/.agents/skills/$skill/SKILL.md" "name: $skill"
+  has "$WORK/user/.claude/skills/$skill/SKILL.md" "name: $skill"
+done
+absent "$WORK/user/.agents/skills/log"
+absent "$WORK/user/.agents/skills/agents-control"
+[ -f "$WORK/user/.agents/skills/ac-write-manual/assets/SUM.md" ] || fatal 'missing manual asset'
+run "$AC" doctor --skills-only --strict
+cp "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md" "$WORK/global.before"
+cp "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/record.before"
+run sh "$SRC/install.sh"
+same "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md" "$WORK/global.before"
+same "$AGENTS_CONTROL_HOME/install.tsv" "$WORK/record.before"
+# Claude instructions may contain only the generated block, with no preamble.
+# Also exercise removal of the former owned setup name.
+. "$SRC/lib/context.sh"
+. "$SRC/lib/install.sh"
+ac_block "$WORK/user/.claude/CLAUDE.md" > "$WORK/block-only"
+cp "$WORK/block-only" "$WORK/user/.claude/CLAUDE.md"
+mkdir "$WORK/user/.agents/skills/agents-control"
+printf 'old owned setup skill\n' > "$WORK/user/.agents/skills/agents-control/SKILL.md"
+printf '%s\tD\t%s\n' "$WORK/user/.agents/skills/agents-control" "$(ac_fingerprint "$WORK/user/.agents/skills/agents-control" D)" >> "$AGENTS_CONTROL_HOME/install.tsv"
+run sh "$SRC/install.sh"
+same "$WORK/block-only" "$WORK/user/.claude/CLAUDE.md"
+absent "$WORK/user/.agents/skills/agents-control"
+ok 'install and update keep personal guidance, private data and all six ac- workflows'
 
-group() { printf '\n%s%s%s\n' "$B" "$*" "$R"; }
-pass()  { PASS=$((PASS + 1)); printf '  %sok%s   %s\n' "$GRN" "$R" "$*"; }
-fail()  { FAIL=$((FAIL + 1)); printf '  %sFAIL%s %s\n' "$RED" "$R" "$*"; }
-
-check()      { if [ "$1" = 0 ]; then pass "$2"; else fail "$2"; fi }
-assert_file() { if [ -f "$1" ]; then pass "$2"; else fail "$2 (missing: $1)"; fi }
-assert_link() { if [ -L "$1" ]; then pass "$2"; else fail "$2 (not a symlink: $1)"; fi }
-
-# ---------------------------------------------------------------- install
-
-group "install.sh"
-
-export HOME="$WORK/home"
-export AGENTS_CONTROL_HOME="$HOME/.agents-control"
-export AGENTS_CONTROL_BIN_DIR="$HOME/.local/bin"
-export AGENTS_CONTROL_SOURCE="$SRC"
-mkdir -p "$HOME"
-
-if sh "$SRC/install.sh" > "$WORK/install.log" 2>&1; then
-  pass "install.sh succeeds"
-else
-  fail "install.sh failed"
-  cat "$WORK/install.log"
-  exit 1
-fi
-
-AC="$AGENTS_CONTROL_BIN_DIR/agents-control"
-if [ -x "$AC" ]; then pass "CLI is executable on PATH"; else fail "CLI not executable at $AC"; fi
-
-# The setup skill must land where each tool looks: .agents/skills for Codex
-# and Cursor, .claude/skills for Claude Code.
-assert_file "$HOME/.agents/skills/agents-control/SKILL.md" "setup skill readable via ~/.agents/skills (Codex, Cursor)"
-assert_file "$HOME/.claude/skills/agents-control/SKILL.md" "setup skill readable via ~/.claude/skills (Claude Code)"
-
-"$AC" version > /dev/null 2>&1
-check $? "agents-control version runs"
-
-# Re-running is the documented update path.
-if sh "$SRC/install.sh" > "$WORK/install2.log" 2>&1; then
-  pass "install.sh is idempotent"
-else
-  fail "second install.sh run failed"
-  cat "$WORK/install2.log"
-fi
-
-# ---------------------------------------------------------------- init
-
-group "init"
-
-REPO="$WORK/target"
-mkdir -p "$REPO"
-git -C "$REPO" init --quiet
-git -C "$REPO" config user.email test@example.com
-git -C "$REPO" config user.name Test
+new_repo 'project with spaces'
+printf 'team guidance\n' > AGENTS.md
+printf 'team Claude guidance\n' > CLAUDE.md
+printf 'team readme\n' > README.md
+printf 'team ignore\n' > .gitignore
+mkdir -p .agents/skills/log .claude/skills/log
+printf 'team skill\n' > .agents/skills/log/SKILL.md
+printf 'team adapter\n' > .claude/skills/log/SKILL.md
+git add -A
+git commit -qm initial
+printf 'unrelated exclusion without LF' >> .git/info/exclude
+cp .git/info/exclude "$WORK/exclude.before"
+git status --porcelain > "$WORK/status.before"
+run "$AC" init
+git status --porcelain > "$WORK/status.after"
+same "$WORK/status.before" "$WORK/status.after"
+git diff --exit-code || fatal 'project files changed'
+absent .agents-control
+for doc in AGENTS PRD STACK ROADMAP DECISIONS TASKS CHANGELOG; do
+  [ -f "docs-agents-private/$doc.md" ] || fatal "missing $doc"
+done
+absent docs-agents-private/GLOSSARY.md
+has .git/info/exclude '/docs-agents-private/'
+has .git/info/exclude 'unrelated exclusion without LF'
+printf 'personal task\n' >> docs-agents-private/TASKS.md
+cp docs-agents-private/TASKS.md "$WORK/tasks.before"
+cp .git/info/exclude "$WORK/exclude.after"
+run "$AC" init
+same docs-agents-private/TASKS.md "$WORK/tasks.before"
+same .git/info/exclude "$WORK/exclude.after"
+run "$AC" doctor
+mkdir subdir
+cd subdir
+[ "$("$AC" resolve TASKS)" = "$REPO/docs-agents-private/TASKS.md" ] || fatal 'wrong path from subdirectory'
+"$AC" resolve TASKS --read > "$WORK/task-read"
+has "$WORK/task-read" 'personal task'
+[ "$("$AC" resolve GLOSSARY --path)" = "$REPO/docs-agents-private/GLOSSARY.md" ] || fatal 'wrong optional path'
+absent "$REPO/docs-agents-private/GLOSSARY.md"
+[ "$("$AC" resolve features/retry/PLAN)" = "$REPO/docs-agents-private/features/retry/PLAN.md" ] || fatal 'wrong feature path'
+"$AC" context > "$WORK/context"
+has "$WORK/context" "$REPO/docs-agents-private"
+ok 'setup is local, excluded, idempotent and readable from subdirectories'
 
 cd "$REPO"
-"$AC" init > "$WORK/init.log" 2>&1
-check $? "init succeeds in a fresh git repo"
+printf 'code change\n' > public.txt
+git add -A
+run "$AC" guard-index
+git ls-files > "$WORK/staged"
+if grep -Fq docs-agents-private "$WORK/staged"; then fatal 'private docs staged normally'; fi
+git add -f docs-agents-private/TASKS.md
+git ls-files --stage > "$WORK/index.before"
+reject "$AC" guard-index
+reject "$AC" doctor
+git ls-files --stage > "$WORK/index.after"
+same "$WORK/index.before" "$WORK/index.after"
+git commit -qm 'forced tracking for regression'
+reject "$AC" init
+git rm --cached -q docs-agents-private/TASKS.md
+run "$AC" guard-index
+ok 'guard catches forced staging and tracked notes, preserves index, and allows tracking removal'
 
-assert_file "$REPO/AGENTS.md" "AGENTS.md created"
-assert_file "$REPO/CLAUDE.md" "CLAUDE.md created"
-if grep -q '^@AGENTS\.md$' "$REPO/CLAUDE.md"; then
-  pass "CLAUDE.md imports AGENTS.md"
-else
-  fail "CLAUDE.md does not import AGENTS.md"
-fi
+# A moved checkout needs no registry or reattachment.
+cd "$WORK"
+mv 'project with spaces' 'moved project'
+cd 'moved project'
+"$AC" context > "$WORK/moved-context"
+has "$WORK/moved-context" "$WORK/moved project/docs-agents-private"
+run "$AC" doctor
+ok 'moving a checkout keeps context available without registration'
 
-for s in commit log decide glossary write-manual unslop; do
-  assert_file "$REPO/.agents/skills/$s/SKILL.md" "skill $s installed"
-done
-for d in PRD STACK ROADMAP DECISIONS TASKS CHANGELOG; do
-  assert_file "$REPO/docs-agents/$d.md" "doc $d.md scaffolded"
-done
-assert_file "$REPO/README.md" "README.md scaffolded (part of the MVP core)"
+new_repo 'main tree'
+git commit --allow-empty -qm initial
+run "$AC" init
+first=$("$AC" resolve TASKS)
+[ "$first" = "$REPO/docs-agents-private/TASKS.md" ] || fatal 'wrong main checkout path'
+printf 'shared note\n' >> "$first"
+git worktree add -qb other "$WORK/other tree"
+mkdir "$WORK/other tree/sub dir"
+cd "$WORK/other tree/sub dir"
+[ "$("$AC" resolve TASKS)" = "$first" ] || fatal 'worktree resolves a different TASKS path'
+"$AC" context > "$WORK/tree-context"
+has "$WORK/tree-context" "Documents: $REPO/docs-agents-private"
+has "$WORK/tree-context" 'agents-control:private'
+"$AC" resolve TASKS --read > "$WORK/tree-tasks"
+has "$WORK/tree-tasks" 'shared note'
+run "$AC" init
+run "$AC" doctor
+absent "$WORK/other tree/docs-agents-private"
+printf 'worktree note\n' >> "$("$AC" resolve TASKS)"
+has "$first" 'worktree note'
+ok 'linked worktrees share the main checkout notes from any subdirectory'
 
-# The setup skill is user-level; it must not be copied into target repos.
-if [ -e "$REPO/.agents/skills/agents-control" ]; then
-  fail "the agents-control setup skill leaked into the target repo"
-else
-  pass "setup skill not copied into the target repo"
-fi
+# guard-index checks the checkout where the commit happens.
+cd "$WORK/other tree"
+mkdir docs-agents-private
+printf 'stray\n' > docs-agents-private/TASKS.md
+run "$AC" doctor
+has "$WORK/last.log" 'is no longer read'
+git add -f docs-agents-private/TASKS.md
+reject "$AC" guard-index
+cd "$REPO"
+run "$AC" guard-index
+reject "$AC" init
+cd "$WORK/other tree"
+git rm --cached -q docs-agents-private/TASKS.md
+rm -r docs-agents-private
+run "$AC" guard-index
+git -C "$REPO" add -f docs-agents-private/TASKS.md
+run "$AC" guard-index
+reject "$AC" doctor
+git -C "$REPO" rm --cached -q docs-agents-private/TASKS.md
+run "$AC" doctor
+ok 'guard-index checks the committing checkout and doctor also checks the shared notes'
 
-# ---------------------------------------------------------------- adapters
+cd "$REPO"
+git worktree remove "$WORK/other tree"
+absent "$WORK/other tree"
+has "$first" 'worktree note'
+run "$AC" doctor
+ok 'removing a linked worktree keeps the shared notes'
 
-group "adapters (symlink mode)"
+# Upgrade: an earlier version kept notes in a linked worktree and never set up the main checkout.
+new_repo 'upgrade main'
+git commit --allow-empty -qm initial
+git worktree add -qb old "$WORK/upgrade tree"
+mkdir "$WORK/upgrade tree/docs-agents-private"
+cp "$SRC/templates/private-AGENTS.md" "$WORK/upgrade tree/docs-agents-private/AGENTS.md"
+printf 'old worktree note\n' > "$WORK/upgrade tree/docs-agents-private/TASKS.md"
+cd "$WORK/upgrade tree"
+"$AC" context > "$WORK/upgrade-context"
+has "$WORK/upgrade-context" 'agents-control upgrade needed'
+has "$WORK/upgrade-context" "$REPO/docs-agents-private"
+mv docs-agents-private "$REPO/docs-agents-private"
+"$AC" context > "$WORK/upgrade-context"
+if grep -Fq 'upgrade needed' "$WORK/upgrade-context"; then fatal 'upgrade notice after moving notes'; fi
+ok 'notes from an earlier version in a linked worktree are reported until moved'
 
-assert_link "$REPO/.claude/skills/commit" "adapter is a per-skill symlink"
-if [ -L "$REPO/.claude/skills" ]; then
-  fail ".claude/skills is a directory symlink (undocumented in Claude Code)"
-else
-  pass ".claude/skills is a real directory"
-fi
-assert_file "$REPO/.claude/skills/commit/SKILL.md" "Claude Code can read a skill through the adapter"
+# A bare main repository has no working tree. Each checkout keeps its own notes.
+git init -q --bare "$WORK/bare repo.git"
+git -C "$REPO" push -q "$WORK/bare repo.git" HEAD:main
+git -C "$WORK/bare repo.git" worktree add -q "$WORK/bare tree" main
+cd "$WORK/bare tree"
+run "$AC" init
+has "$WORK/last.log" 'main repository is bare'
+[ "$("$AC" resolve TASKS)" = "$WORK/bare tree/docs-agents-private/TASKS.md" ] || fatal 'wrong bare worktree path'
+run "$AC" doctor
+ok 'worktrees of a bare repository fall back to their own notes'
 
-# Adapters must survive a clone, since cloud sessions read the checkout.
-git -C "$REPO" add -A > /dev/null 2>&1
-git -C "$REPO" commit --quiet -m "agents-control" > /dev/null 2>&1
-git clone --quiet "$REPO" "$WORK/clone" 2>/dev/null
-assert_file "$WORK/clone/.claude/skills/commit/SKILL.md" "adapter still resolves after a git clone"
+# A linked checkout may override ignore rules. Only the shared location must be excluded.
+cd "$REPO"
+git worktree add -qb ignore-override "$WORK/override tree"
+cd "$WORK/override tree"
+printf '!/docs-agents-private/\n' > .gitignore
+run "$AC" init
+run "$AC" doctor
+cd "$REPO"
+git worktree remove --force "$WORK/override tree"
+ok 'doctor checks exclusion where the shared notes live'
 
-# ---------------------------------------------------------------- idempotency
+# With separate Git metadata, Git lists the metadata directory as the main worktree.
+git init -q --separate-git-dir "$WORK/split meta" "$WORK/split main"
+cd "$WORK/split main"
+git commit --allow-empty -qm initial
+run "$AC" init
+split=$("$AC" resolve TASKS)
+[ "$split" = "$WORK/split main/docs-agents-private/TASKS.md" ] || fatal 'wrong separate metadata path'
+"$AC" context > "$WORK/split-context"
+has "$WORK/split-context" 'agents-control:private'
+run "$AC" doctor
+git worktree add -qb split-other "$WORK/split other"
+cd "$WORK/split other"
+run "$AC" init
+has "$WORK/last.log" 'Git does not record the main checkout'
+[ "$("$AC" resolve TASKS)" = "$WORK/split other/docs-agents-private/TASKS.md" ] || fatal 'wrong separate metadata worktree path'
+run "$AC" doctor
+ok 'separate Git metadata keeps notes in each checkout'
 
-group "idempotency"
+git init -q --separate-git-dir "$WORK/split tracked meta" "$WORK/split tracked"
+cd "$WORK/split tracked"
+mkdir docs-agents-private
+printf 'team-owned file\n' > docs-agents-private/TASKS.md
+git add -A
+git commit -qm initial
+cp "$WORK/split tracked meta/info/exclude" "$WORK/split-exclude.before"
+reject "$AC" init
+has "$WORK/last.log" 'docs-agents-private is tracked'
+same "$WORK/split tracked meta/info/exclude" "$WORK/split-exclude.before"
+absent docs-agents-private/AGENTS.md
+ok 'separate Git metadata setup refuses tracked notes in the main checkout'
 
-printf -- '- [ ] sentinel task\n' >> "$REPO/docs-agents/TASKS.md"
-printf 'my own readme\n' > "$REPO/README.md"
-cp "$REPO/AGENTS.md" "$WORK/agents.before"
-"$AC" init > "$WORK/init2.log" 2>&1
-check $? "init runs a second time"
+new_repo unconfigured
+"$AC" context > "$WORK/empty"
+[ ! -s "$WORK/empty" ] || fatal 'context leaked into an unconfigured checkout'
+reject "$AC" resolve TASKS
+reject "$AC" doctor
+for option in --profile=private --profile=team --private-dir=custom --adopt; do reject "$AC" init "$option"; done
+for action in share migrate adapters update recover; do reject "$AC" "$action"; done
+reject "$AC" resolve features/../../PLAN
+reject "$AC" resolve TASKS --scope=shared
+cd "$WORK"
+"$AC" context > "$WORK/nonrepo"
+[ ! -s "$WORK/nonrepo" ] || fatal 'nonrepository context was not empty'
+ok 'unconfigured context is empty and removed choices fail clearly'
 
-if grep -q 'sentinel task' "$REPO/docs-agents/TASKS.md"; then
-  pass "existing doc content survives a re-run"
-else
-  fail "re-running init clobbered docs-agents/TASKS.md"
-fi
-if cmp -s "$WORK/agents.before" "$REPO/AGENTS.md"; then
-  pass "AGENTS.md untouched on a re-run"
-else
-  fail "re-running init rewrote AGENTS.md"
-fi
-if grep -q 'my own readme' "$REPO/README.md"; then
-  pass "an existing README.md survives init"
-else
-  fail "init clobbered an existing README.md"
-fi
+new_repo tracked
+mkdir docs-agents-private
+printf 'team-owned file\n' > docs-agents-private/TASKS.md
+git add -A
+git commit -qm initial
+cp .git/info/exclude "$WORK/tracked-exclude.before"
+reject "$AC" init
+same .git/info/exclude "$WORK/tracked-exclude.before"
+has docs-agents-private/TASKS.md 'team-owned file'
+absent docs-agents-private/AGENTS.md
+ok 'setup refuses a tracked private-folder name before changing anything'
 
-# ---------------------------------------------------------------- copy mode
+new_repo symlinks
+mkdir "$WORK/outside"
+ln -s "$WORK/outside" docs-agents-private
+reject "$AC" init
+reject "$AC" context
+absent "$WORK/outside/AGENTS.md"
+rm docs-agents-private
+mkdir docs-agents-private
+ln -s "$WORK/outside/task" docs-agents-private/TASKS.md
+reject "$AC" init
+absent docs-agents-private/AGENTS.md
+rm docs-agents-private/TASKS.md
+run "$AC" init
+ln -s "$WORK/outside" docs-agents-private/features
+reject "$AC" resolve features/retry/PLAN
+rm .git/info/exclude
+ln -s "$WORK/outside/exclude" .git/info/exclude
+reject "$AC" init
+absent "$WORK/outside/exclude"
+ok 'symlink folders, documents, feature paths and exclusion files cannot redirect writes'
 
-group "copy mode"
+new_repo interrupted
+run "$AC" init
+rm docs-agents-private/AGENTS.md docs-agents-private/STACK.md
+printf 'surviving private task\n' >> docs-agents-private/TASKS.md
+run "$AC" init
+has docs-agents-private/TASKS.md 'surviving private task'
+run "$AC" doctor
+printf '\n!/docs-agents-private/\n' >> .git/info/exclude
+reject "$AC" doctor
+run "$AC" init
+run "$AC" doctor
+ok 'rerunning init completes partial setup and repairs a removed exclusion'
 
-"$AC" adapters --mode=copy > "$WORK/copy.log" 2>&1
-check $? "adapters --mode=copy succeeds"
-if [ -L "$REPO/.claude/skills/commit" ]; then
-  fail "adapter is still a symlink after --mode=copy"
-else
-  pass "adapter is a real directory in copy mode"
-fi
-assert_file "$REPO/.claude/skills/commit/SKILL.md" "copied adapter has a SKILL.md"
+printf 'user edit\n' >> "$WORK/user/.agents/skills/ac-log/SKILL.md"
+cp "$WORK/user/.agents/skills/ac-log/SKILL.md" "$WORK/edited.before"
+cp "$WORK/state/install.tsv" "$WORK/owned.before"
+reject sh "$SRC/install.sh"
+same "$WORK/user/.agents/skills/ac-log/SKILL.md" "$WORK/edited.before"
+same "$WORK/state/install.tsv" "$WORK/owned.before"
+cp "$SRC/skills/ac-log/SKILL.md" "$WORK/user/.agents/skills/ac-log/SKILL.md"
+printf '\nmy tail without LF' >> "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md"
+cp "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md" "$WORK/tail.before"
+run sh "$SRC/install.sh"
+same "$AGENTS_CONTROL_CODEX_HOME/AGENTS.md" "$WORK/tail.before"
+mkdir -p "$WORK/user/.agents/skills/ac-init/assets"
+printf 'local resource\n' > "$WORK/user/.agents/skills/ac-init/assets/note"
+reject sh "$SRC/install.sh"
+has "$WORK/user/.agents/skills/ac-init/assets/note" 'local resource'
+ok 'installer refuses edited skills and resources before updates and preserves guidance bytes'
 
-# Once recorded, copy mode must stick — a teammate on macOS regenerating
-# adapters must not silently flip a Windows-friendly repo back to symlinks.
-"$AC" adapters > "$WORK/copy2.log" 2>&1
-if [ -L "$REPO/.claude/skills/commit" ]; then
-  fail "a bare 'adapters' run flipped copy mode back to symlinks"
-else
-  pass "copy mode persists across a bare 'adapters' run"
-fi
-
-# Drift is what copy mode risks; doctor must catch it and adapters must fix it.
-printf '\ndrifted\n' >> "$REPO/.agents/skills/commit/SKILL.md"
-if "$AC" doctor --strict > "$WORK/drift.log" 2>&1; then
-  fail "doctor --strict passed despite a drifted copy"
-else
-  pass "doctor --strict catches a drifted copy"
-fi
-"$AC" adapters > /dev/null 2>&1
-if cmp -s "$REPO/.agents/skills/commit/SKILL.md" "$REPO/.claude/skills/commit/SKILL.md"; then
-  pass "adapters re-copies the drifted skill"
-else
-  fail "adapters did not refresh the drifted copy"
-fi
-
-"$AC" adapters --mode=symlink > /dev/null 2>&1
-assert_link "$REPO/.claude/skills/commit" "adapters --mode=symlink converts back"
-
-# ---------------------------------------------------------------- doctor
-
-group "doctor"
-
-"$AC" doctor --strict > "$WORK/doctor.log" 2>&1
-check $? "doctor --strict passes on a healthy repo"
-if grep -q "Claude Code" "$WORK/doctor.log" && grep -q "Codex" "$WORK/doctor.log" && grep -q "Cursor" "$WORK/doctor.log"; then
-  pass "doctor reports all three tools"
-else
-  fail "doctor output is missing a tool"
-fi
-
-# A broken symlink is the failure mode of symlink mode; it must be named.
-rm -f "$REPO/.claude/skills/log"
-ln -s ../../.agents/skills/does-not-exist "$REPO/.claude/skills/log"
-if "$AC" doctor --strict > "$WORK/broken.log" 2>&1; then
-  fail "doctor --strict passed with a broken adapter symlink"
-else
-  pass "doctor --strict fails on a broken adapter symlink"
-fi
-if grep -q "broken symlink" "$WORK/broken.log"; then
-  pass "doctor names the broken symlink"
-else
-  fail "doctor did not explain the broken symlink"
-fi
-"$AC" adapters > /dev/null 2>&1
-
-# A CLAUDE.md without the import is silent breakage: Claude Code reads the
-# file, finds nothing, and never sees the manifest.
-printf '# notes\n' > "$REPO/CLAUDE.md"
-if "$AC" doctor --strict > "$WORK/noimport.log" 2>&1; then
-  fail "doctor --strict passed with a CLAUDE.md that has no import"
-else
-  pass "doctor --strict catches a CLAUDE.md missing @AGENTS.md"
-fi
-printf '@AGENTS.md\n' > "$REPO/CLAUDE.md"
-
-# Frontmatter outside the spec works in Claude Code and nowhere else.
-mkdir -p "$REPO/.agents/skills/nonportable"
-{ printf -- '---\n'
-  printf 'name: nonportable\n'
-  printf 'description: A skill with a Claude-only frontmatter key.\n'
-  printf 'argument-hint: "[thing]"\n'
-  printf -- '---\n\nBody.\n'; } > "$REPO/.agents/skills/nonportable/SKILL.md"
-if "$AC" doctor --strict > "$WORK/frontmatter.log" 2>&1; then
-  fail "doctor --strict passed with non-spec frontmatter"
-else
-  pass "doctor --strict flags non-spec frontmatter"
-fi
-rm -r -f "$REPO/.agents/skills/nonportable"
-"$AC" adapters > /dev/null 2>&1
-
-# A stale adapter must be removed, not left pointing at a deleted skill.
-if [ -e "$REPO/.claude/skills/nonportable" ]; then
-  fail "adapters left a stale entry for a removed skill"
-else
-  pass "adapters removes the adapter for a removed skill"
-fi
-
-# ---------------------------------------------------------------- guards
-
-group "guards"
-
-mkdir -p "$WORK/notarepo"
-cd "$WORK/notarepo"
-if "$AC" init > "$WORK/norepo.log" 2>&1; then
-  fail "init ran outside a git repo"
-else
-  pass "init refuses to run outside a git repo"
-fi
-
-# The toolkit is a source, not a target.
-TOOLKIT="$WORK/toolkit-clone"
-mkdir -p "$TOOLKIT"
-git -C "$TOOLKIT" init --quiet
-git -C "$TOOLKIT" remote add origin https://github.com/patrickfleith/agents-control.git
-cd "$TOOLKIT"
-if "$AC" init > "$WORK/selfinit.log" 2>&1; then
-  fail "init ran inside the agents-control toolkit repo"
-else
-  pass "init refuses to run inside the toolkit repo"
-fi
-
-# ---------------------------------------------------------------- summary
-
-printf '\n%s%s passed, %s failed%s\n' "$B" "$PASS" "$FAIL" "$R"
-[ "$FAIL" -eq 0 ]
+# Existing repository team artifacts and old private data are not migration targets.
+new_repo legacy
+mkdir -p docs-agents-local .agents-control
+printf 'old private note\n' > docs-agents-local/TASKS.md
+printf 'team configuration\n' > .agents-control/team.conf
+cp docs-agents-local/TASKS.md "$WORK/legacy.before"
+cp .agents-control/team.conf "$WORK/team.before"
+run "$AC" init
+same docs-agents-local/TASKS.md "$WORK/legacy.before"
+same .agents-control/team.conf "$WORK/team.before"
+"$AC" context > "$WORK/legacy.context"
+if grep -Fq 'old private note' "$WORK/legacy.context"; then fatal 'legacy private data loaded automatically'; fi
+ok 'legacy files are preserved and never selected through hidden configuration'
+printf '\n%s behavior checks passed\n' "$PASS"

@@ -1,148 +1,131 @@
 #!/bin/sh
-# agents-control installer.
-#
-#   curl -fsSL https://raw.githubusercontent.com/patrickfleith/agents-control/main/install.sh | sh
-#
-# Fetches the toolkit, puts `agents-control` on your PATH, and installs the
-# setup skill where Claude Code, Codex and Cursor each look for it.
-# Re-running is the update path.
+# Install user-level skills and personal context loaders. Rerun to update.
 set -eu
-
-REPO_SLUG="patrickfleith/agents-control"
-REF="${AGENTS_CONTROL_REF:-main}"
-HOME_DIR="${AGENTS_CONTROL_HOME:-$HOME/.agents-control}"
-BIN_DIR="${AGENTS_CONTROL_BIN_DIR:-$HOME/.local/bin}"
-
-if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
-  B=$(printf '\033[1m'); R=$(printf '\033[0m')
-  RED=$(printf '\033[31m'); YEL=$(printf '\033[33m'); GRN=$(printf '\033[32m')
-else
-  B=''; R=''; RED=''; YEL=''; GRN=''
-fi
-
-step() { printf '%s%s%s\n' "$B" "$*" "$R"; }
-ok()   { printf '  %s+%s %s\n' "$GRN" "$R" "$*"; }
-warn() { printf '  %s!%s %s\n' "$YEL" "$R" "$*" >&2; }
-die()  { printf '%serror:%s %s\n' "$RED" "$R" "$*" >&2; exit 1; }
-
-command -v git >/dev/null 2>&1 || die "git is required."
-
-TMP=$(mktemp -d) || die "could not create a temp directory"
-cleanup() { rm -r -f "$TMP"; }
-trap cleanup EXIT INT TERM
-
-# ---------------------------------------------------------------- fetch
-
-step "Fetching agents-control ($REF)"
-FETCHED=""
-# AGENTS_CONTROL_SOURCE installs from a local checkout instead of GitHub.
-# The test harness and CI use it; it also lets you install a fork or a
-# work-in-progress branch you haven't pushed.
+[ "$#" -eq 0 ] || { printf 'error: installer takes no options\n' >&2; exit 1; }
+command -v git >/dev/null 2>&1 || { printf 'error: Git is required\n' >&2; exit 1; }
+umask 077
+INSTALL_CWD=$(pwd -P)
+TMP=$(mktemp -d)
+LOCK_HELD=
+trap 'rm -rf "$TMP"; if [ -n "$LOCK_HELD" ]; then rmdir "$LOCK_HELD"; fi' EXIT
+trap 'exit 130' INT
+trap 'exit 143' HUP TERM
+REF=${AGENTS_CONTROL_REF:-main}
 if [ -n "${AGENTS_CONTROL_SOURCE:-}" ]; then
-  [ -f "$AGENTS_CONTROL_SOURCE/bin/agents-control" ] \
-    || die "AGENTS_CONTROL_SOURCE=$AGENTS_CONTROL_SOURCE is not an agents-control checkout"
-  tar c -C "$AGENTS_CONTROL_SOURCE" --exclude=./.git . | tar x -C "$TMP"
-  if git -C "$AGENTS_CONTROL_SOURCE" rev-parse --short HEAD >/dev/null 2>&1; then
-    printf '%s (local)\n' "$(git -C "$AGENTS_CONTROL_SOURCE" rev-parse --short HEAD)" \
-      > "$TMP/.agents-control-version"
-  else
-    printf 'local\n' > "$TMP/.agents-control-version"
-  fi
-  FETCHED=local
-  REF="local:$AGENTS_CONTROL_SOURCE"
-fi
-if [ -z "$FETCHED" ] && command -v curl >/dev/null 2>&1; then
-  if curl -fsSL "https://github.com/$REPO_SLUG/archive/refs/heads/$REF.tar.gz" \
-       | tar xz -C "$TMP" --strip-components=1 2>/dev/null; then
-    FETCHED=tarball
-  fi
-fi
-if [ -z "$FETCHED" ]; then
-  # Tarball URLs only resolve for branches; a tag or sha needs a clone.
-  if git clone --quiet --depth 1 --branch "$REF" \
-       "https://github.com/$REPO_SLUG" "$TMP/clone" 2>/dev/null; then
-    # Move the tracked files and .git separately: a single mv with both globs
-    # fails wholesale when one of them matches nothing.
-    mv "$TMP/clone"/* "$TMP/" 2>/dev/null || true
-    mv "$TMP/clone/.git" "$TMP/" 2>/dev/null || true
-    rmdir "$TMP/clone" 2>/dev/null || true
-    FETCHED=clone
-  fi
-fi
-[ -n "$FETCHED" ] || die "could not download $REPO_SLUG at ref '$REF'. Check the ref and your network."
-[ -f "$TMP/bin/agents-control" ] || die "the download is missing bin/agents-control — is '$REF' a valid ref?"
-
-if [ ! -f "$TMP/.agents-control-version" ]; then
-  if git -C "$TMP" rev-parse --short HEAD >/dev/null 2>&1; then
-    git -C "$TMP" rev-parse --short HEAD > "$TMP/.agents-control-version"
-  else
-    printf '%s\n' "$REF" > "$TMP/.agents-control-version"
-  fi
-fi
-ok "downloaded $(cat "$TMP/.agents-control-version")"
-
-# ---------------------------------------------------------------- install
-
-step "Installing to $HOME_DIR"
-mkdir -p "$(dirname "$HOME_DIR")"
-if [ -e "$HOME_DIR" ]; then
-  rm -r -f "$HOME_DIR.previous"
-  mv "$HOME_DIR" "$HOME_DIR.previous"
-fi
-mv "$TMP" "$HOME_DIR"
-trap - EXIT INT TERM
-chmod +x "$HOME_DIR/bin/agents-control"
-rm -r -f "$HOME_DIR.previous"
-ok "toolkit installed"
-
-# ---------------------------------------------------------------- PATH
-
-step "Putting agents-control on your PATH"
-mkdir -p "$BIN_DIR"
-rm -f "$BIN_DIR/agents-control"
-if ln -s "$HOME_DIR/bin/agents-control" "$BIN_DIR/agents-control" 2>/dev/null; then
-  ok "$BIN_DIR/agents-control"
+  SOURCE=$(cd "$AGENTS_CONTROL_SOURCE" && pwd -P)
 else
-  cp "$HOME_DIR/bin/agents-control" "$BIN_DIR/agents-control"
-  chmod +x "$BIN_DIR/agents-control"
-  ok "$BIN_DIR/agents-control (copied — this filesystem has no symlinks)"
+  SOURCE=$TMP/download
+  git clone --quiet --depth 1 --branch "$REF" https://github.com/patrickfleith/agents-control.git "$SOURCE"
 fi
-
-case ":$PATH:" in
-  *":$BIN_DIR:"*) ;;
-  *) warn "$BIN_DIR is not on your PATH. Add this to your shell profile:"
-     printf '\n      export PATH="%s:$PATH"\n\n' "$BIN_DIR" ;;
-esac
-
-# ---------------------------------------------------------------- skill
-
-# The setup skill goes into every tool's personal skills directory, so it is
-# invocable whichever agent you happen to open. `.agents/skills` covers Codex
-# and Cursor; Claude Code reads only `.claude/skills`.
-step "Installing the setup skill"
-SRC_SKILL="$HOME_DIR/.agents/skills/agents-control"
-[ -d "$SRC_SKILL" ] || die "the download is missing .agents/skills/agents-control"
-
-for dest in "$HOME/.agents/skills/agents-control" "$HOME/.claude/skills/agents-control"; do
-  mkdir -p "$(dirname "$dest")"
-  rm -r -f "$dest"
-  if ln -s "$SRC_SKILL" "$dest" 2>/dev/null; then
-    ok "$dest"
-  else
-    cp -R "$SRC_SKILL" "$dest"
-    ok "$dest (copied)"
-  fi
+[ -f "$SOURCE/skills/ac-init/SKILL.md" ] || { printf 'error: source is not a private agents-control release\n' >&2; exit 1; }
+. "$SOURCE/lib/context.sh"
+. "$SOURCE/lib/install.sh"
+USER_ROOT=$(ac_install_path "${AGENTS_CONTROL_USER_HOME:-$HOME}")
+AC_HOME=$(ac_install_path "${AGENTS_CONTROL_HOME:-$USER_ROOT/.agents-control}")
+BIN_DIR=$(ac_install_path "${AGENTS_CONTROL_BIN_DIR:-$USER_ROOT/.local/bin}")
+CODEX_DIR=$(ac_install_path "${AGENTS_CONTROL_CODEX_HOME:-${CODEX_HOME:-$USER_ROOT/.codex}}")
+for directory in "$AC_HOME" "$BIN_DIR" "$CODEX_DIR"; do
+  [ "$directory" != / ] || ac_die 'installation destination cannot be /'
+  ac_safe_path "$directory"
 done
+[ "$AC_HOME" != "$SOURCE" ] || ac_die 'install data cannot replace the source checkout'
+if [ -d "$AC_HOME/install.lock" ]; then ac_die "another install is running or stopped; inspect $AC_HOME/install.lock first"; fi
+mkdir -p "$AC_HOME"
+mkdir "$AC_HOME/install.lock" || ac_die 'another installer is running'
+LOCK_HELD=$AC_HOME/install.lock
+# Older operations need their old recovery tool before this installer can replace it.
+for pending in "$AC_HOME/operations/install/current/pending" "$AC_HOME"/operations/*/current/pending; do
+  [ ! -e "$pending" ] || ac_die 'finish the previous operation with the previous release before upgrading'
+done
+RECORD=$AC_HOME/install.tsv
+ac_safe_path "$RECORD"
+[ ! -e "$RECORD" ] || [ -f "$RECORD" ] || ac_die 'install.tsv must be a regular file'
+if [ -f "$RECORD" ]; then
+  awk -F '\t' '/^#/ {next} NF!=3 || seen[$1]++ || $2 !~ /^[FDLB]$/ || $3 !~ /^(file|dir|link|block):[0-9]+:[0-9]+$/ {exit 1}' "$RECORD" || ac_die 'invalid install ownership record'
+  cp "$RECORD" "$TMP/record"
+else printf '# agents-control ownership schema=1\n' > "$TMP/record"; fi
+# Releases before ownership records linked the launcher directly into AC_HOME.
+# Adopt only that exact legacy link; keep all other conflict checks in place.
+if [ ! -f "$RECORD" ] && [ -L "$BIN_DIR/agents-control" ] &&
+   [ "$(readlink "$BIN_DIR/agents-control")" = "$AC_HOME/bin/agents-control" ]; then
+  printf '%s\tL\t%s\n' "$BIN_DIR/agents-control" "$(ac_fingerprint "$BIN_DIR/agents-control" L)" >> "$TMP/record"
+fi
+: > "$TMP/plan"
+plan() {
+  destination=$1; payload=$2; kind=$3
+  ac_safe_path "$(dirname "$destination")"
+  ac_text_path "$destination"
+  current=$(ac_fingerprint "$destination" "$kind")
+  expected=$(AC_LOOKUP=$destination awk -F '\t' '$1==ENVIRON["AC_LOOKUP"] {print $3}' "$TMP/record")
+  if [ "$kind" = X ]; then
+    [ "$current" != missing ] || return 0
+    if [ -z "$expected" ] || [ "$current" != "$expected" ]; then
+      printf 'Preserved old personal skill with local edits: %s\n' "$destination" >&2
+      return 0
+    fi
+    next=missing
+  else
+    next=$(ac_fingerprint "$payload" "$kind")
+    if [ "$current" != missing ] && [ "$current" != "$expected" ] && [ "$current" != "$next" ]; then
+      ac_die "preserved conflicting or edited file: $destination. Move it aside after reviewing it, then rerun the installer"
+    fi
+  fi
+  printf '%s\t%s\t%s\t%s\n' "$destination" "$payload" "$kind" "$current" >> "$TMP/plan"
+  AC_LOOKUP=$destination awk -F '\t' '$1!=ENVIRON["AC_LOOKUP"]' "$TMP/record" > "$TMP/record.next"
+  mv "$TMP/record.next" "$TMP/record"
+  [ "$next" = missing ] || printf '%s\t%s\t%s\n' "$destination" "$kind" "$next" >> "$TMP/record"
+}
+RUNTIME=$TMP/runtime
+mkdir "$RUNTIME"
+for entry in bin lib templates skills docs install.sh README.md LICENSE; do cp -RP "$SOURCE/$entry" "$RUNTIME/"; done
+git -C "$SOURCE" rev-parse --short HEAD > "$RUNTIME/.agents-control-version" 2>/dev/null || printf '%s\n' "$REF" > "$RUNTIME/.agents-control-version"
+plan "$AC_HOME/toolkit" "$RUNTIME" D
+ln -s "$AC_HOME/toolkit/bin/agents-control" "$TMP/launcher"
+plan "$BIN_DIR/agents-control" "$TMP/launcher" L
+for skill in $AC_SKILLS; do
+  for directory in "$USER_ROOT/.agents/skills" "$USER_ROOT/.claude/skills"; do
+    plan "$directory/$skill" "$RUNTIME/skills/$skill" D
+  done
+done
+# Retire the former setup name only when it is still owned and unedited.
+for directory in "$USER_ROOT/.agents/skills" "$USER_ROOT/.claude/skills"; do
+  plan "$directory/agents-control" '-' X
+done
+cat > "$TMP/loader" <<'DOC'
+<!-- agents-control:start -->
+## Personal agents-control context
 
-# ---------------------------------------------------------------- report
-
-printf '\n'
-step "Done. In the repo you want to bring under agents-control:"
-printf '\n'
-printf '  %-14s %s\n' "Claude Code" "/agents-control"
-printf '  %-14s %s\n' "Codex" "\$agents-control"
-printf '  %-14s %s\n' "Cursor" '"set up agents-control here"'
-printf '\n'
-printf '  or run it yourself:  agents-control init\n'
-printf '\n'
-printf '  Re-run this installer to update. See %s\n' "https://github.com/$REPO_SLUG"
+When starting repository work, run `agents-control context` once if available.
+It prints personal guidance only for a checkout set up with `agents-control init`.
+Follow the project's instructions. Use `ac-` workflows for private notes and
+resolve their paths with `agents-control resolve DOC`. If context is unavailable,
+do not write personal notes into repository docs or invent a private path.
+<!-- agents-control:end -->
+DOC
+if [ -s "$CODEX_DIR/AGENTS.override.md" ]; then GUIDANCE=$CODEX_DIR/AGENTS.override.md
+else GUIDANCE=$CODEX_DIR/AGENTS.md; fi
+for guidance in "$GUIDANCE" "$USER_ROOT/.claude/CLAUDE.md"; do
+  if [ -L "$guidance" ]; then
+    printf 'Preserved symlinked personal instructions: %s. Add the loader from %s/cursor-user-rule.md manually.\n' "$guidance" "$AC_HOME" >&2
+  else plan "$guidance" "$TMP/loader" B; fi
+done
+plan "$AC_HOME/cursor-user-rule.md" "$TMP/loader" F
+# All conflicts have been checked before changing installed code or skills.
+TAB=$(printf '\t')
+while IFS="$TAB" read -r destination payload kind before; do
+  [ "$(ac_fingerprint "$destination" "$kind")" = "$before" ] || ac_die "file changed during installation: $destination"
+  mkdir -p "$(dirname "$destination")"
+  if [ "$kind" = X ]; then rm -rf "$destination"; continue; fi
+  stage=$(mktemp -d "$(dirname "$destination")/.agents-control-install.XXXXXX")
+  if [ "$kind" = B ]; then ac_merge_block "$destination" "$payload" > "$stage/new"
+  else cp -RP "$payload" "$stage/new"; fi
+  if ac_exists "$destination"; then mv "$destination" "$stage/old"; fi
+  if ! mv "$stage/new" "$destination"; then
+    [ ! -e "$stage/old" ] || mv "$stage/old" "$destination"
+    ac_die "could not install $destination"
+  fi
+  rm -rf "$stage"
+done < "$TMP/plan"
+cp "$TMP/record" "$RECORD"
+printf 'Installed agents-control and personal ac- skills.\nIn a project: agents-control init\nCursor: paste %s/cursor-user-rule.md into User Rules.\nRerun this installer to update. Private documents stay in each checkout.\n' "$AC_HOME"
+case ":$PATH:" in *":$BIN_DIR:"*) ;; *) printf 'Add %s to PATH.\n' "$BIN_DIR" ;; esac

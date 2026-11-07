@@ -1,15 +1,22 @@
 ---
-name: glossary
-description: Manage docs-agents/GLOSSARY.md — add or refine a canonical term, extract terms from the current conversation, or audit for conflicts and duplicates. Use when the user says "define this term", "add to the glossary", "build a glossary", "what do we call this", or wants to harden terminology
+name: ac-glossary
+description: Define, refine or audit project terms in private agents-control docs. Use when the user asks for ac-glossary or to manage terms with agents-control.
 ---
 
 # glossary
 
-Maintains `docs-agents/GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
+## Private documents
+
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
+
+Maintains `GLOSSARY.md` — the single source of truth for what terms mean in this project. Reference doc: opinionated, tight, skimmable. No implementation details or code.
 
 ## Locate the file
 
-Edit `docs-agents/GLOSSARY.md`. If it doesn't exist, create it with this structure:
+Edit `GLOSSARY.md` at its resolved path. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Glossary

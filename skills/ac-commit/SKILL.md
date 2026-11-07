@@ -1,9 +1,16 @@
 ---
-name: commit
-description: Turn uncommitted work into a logically ordered sequence of atomic conventional commits. Surveys the whole working tree, groups changes, orders them foundation-first, shows a plan, then commits by path. Use when the user says "commit this", "commit my work", "split this into commits", or "clean up my changes into commits"
+name: ac-commit
+description: Organize uncommitted work into atomic conventional commits and guard private agents-control docs. Use when the user asks for ac-commit.
 ---
 
 # commit
+
+## Protect private notes
+
+Run `agents-control context` once. Before every commit, run
+`agents-control guard-index`. Stop if private files are in the index and preserve
+the user's staging. Stage only the requested code and shared project files.
+Never stage docs-agents-private/ or bypass the guard with forced staging.
 
 Take the current uncommitted work and commit it as a clean, ordered sequence of atomic commits — each self-consistent, each a conventional-commit.
 

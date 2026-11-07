@@ -1,15 +1,22 @@
 ---
-name: decide
-description: Record decisions in docs-agents/DECISIONS.md — add a TBD (open question), log a decided decision, or revise/revoke an existing one. Use when the user says "decide", "we decided", "log a decision", "that's TBD", or wants to change/revoke a past decision
+name: ac-decide
+description: Record, revise or revoke a personal project decision in private agents-control docs. Use when the user asks for ac-decide or to record a decision with agents-control.
 ---
 
 # decide
 
-Maintains `docs-agents/DECISIONS.md`. Keep entries terse.
+## Private documents
+
+Run `agents-control context` once and `agents-control resolve DOC` for each
+needed document. Use only the returned private paths. If setup is missing, ask
+the user to run `agents-control init`. Do not use repository docs as a fallback.
+Read existing entries before editing. Create optional docs only when needed.
+
+Maintains `DECISIONS.md`. Keep entries terse.
 
 ## Locate the file
 
-Edit `docs-agents/DECISIONS.md` in the current project. If it doesn't exist, create it with this structure:
+Edit `DECISIONS.md` at its resolved path. If it doesn't exist, create it with this structure:
 
 ```markdown
 # Decisions
@@ -33,14 +40,14 @@ Date: YYYY-MM-DD HH:MM
 ## Modes
 
 **1. Add a TBD** (open question requiring a decision to move forward, not yet decided). 
-Not to be confused with an open question from `docs-agents/QUESTIONS.md` which do not related to decision.
+Not to be confused with an open question from `QUESTIONS.md` which do not related to decision.
 Append to the `## TBD` list:
 ```
 - **<Shortname> — <pending decision>** — options/context in one line.
 ```
 
 **2. Log a decided decision**
-- Find the highest `DEC-NNN` in `## Decided`; new id = highest + 1, zero-padded to 3 digits.
+- Read DECISIONS.md and find the highest `DEC-NNN`. New id = highest + 1, zero-padded to 3 digits.
 - Prepend the new entry to the top of `## Decided` (newest first).
 - Get the timestamp by running `date "+%Y-%m-%d %H:%M"`.
 - If it resolves a `## TBD` item, remove that TBD line.
