@@ -1,93 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430" role="img" aria-labelledby="title desc">
-  <title id="title">How agents-control carries context between sessions</title>
-  <desc id="desc">Today's session with Claude Code writes goals, decisions and next steps to a private docs-agents-private folder. Tomorrow's session with Codex and next week's session with Cursor read the same notes. The folder is excluded from Git, so the team's history contains only code.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">How agents-control carries notes between sessions</title>
+  <desc id="desc">On Monday you tell Claude Code a decision and a next step. The agent writes them into your private notes folder. On Tuesday, Codex reads the same notes and continues. The notes folder is excluded from Git, so the shared repository only receives code.</desc>
   <style>
     .bg{fill:#ffffff;stroke:#d0d7de}
-    .card{fill:#f6f8fa;stroke:#d0d7de}
-    .folder{fill:#eef6ff;stroke:#3b82f6}
-    .git{fill:#f6f8fa;stroke:#d0d7de}
+    .box{fill:#f6f8fa;stroke:#d0d7de}
+    .notes{fill:#ffffff;stroke:#1f2328}
     .t{fill:#1f2328;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
-    .m{fill:#59636e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+    .m{fill:#57606a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .accent{fill:#1d4ed8}
-    .arrow{stroke:#3b82f6;stroke-width:2;fill:none}
-    .head{fill:#3b82f6}
-    .lockbody{fill:#59636e}.lockshackle{stroke:#59636e;stroke-width:2;fill:none}
-    .dash{stroke:#8c959f;stroke-width:1.5;stroke-dasharray:5 5;fill:none}
-    .ok{fill:#1a7f37;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+    .line{stroke:#1f2328;stroke-width:1.5;fill:none}
+    .dash{stroke:#8c959f;stroke-width:1.5;stroke-dasharray:4 4;fill:none}
+    .head{fill:#1f2328}
     @media (prefers-color-scheme: dark){
       .bg{fill:#0d1117;stroke:#30363d}
-      .card,.git{fill:#161b22;stroke:#30363d}
-      .folder{fill:#0f2240;stroke:#4c8dff}
+      .box{fill:#161b22;stroke:#30363d}
+      .notes{fill:#0d1117;stroke:#e6edf3}
       .t{fill:#e6edf3}
-      .m{fill:#9198a1}
-      .accent{fill:#79b8ff}
-      .arrow{stroke:#4c8dff}
-      .head{fill:#4c8dff}
-      .lockbody{fill:#9198a1}.lockshackle{stroke:#9198a1}
+      .m{fill:#8d96a0}
+      .line{stroke:#e6edf3}
       .dash{stroke:#6e7681}
-      .ok{fill:#3fb950}
+      .head{fill:#e6edf3}
     }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path class="head" d="M0 0L10 5L0 10z"/>
     </marker>
   </defs>
 
-  <rect class="bg" x="1" y="1" width="898" height="428" rx="16"/>
+  <rect class="bg" x="1" y="1" width="898" height="358" rx="12"/>
 
-  <!-- Today -->
-  <text class="m" x="40" y="48" font-size="13" font-weight="600" letter-spacing="1">TODAY</text>
-  <rect class="card" x="40" y="62" width="230" height="150" rx="10"/>
-  <text class="t" x="58" y="92" font-size="17" font-weight="600">Claude Code</text>
-  <text class="m" x="58" y="113" font-size="11" font-weight="600" letter-spacing="0.5">YOU SAY</text>
-  <text class="m" x="58" y="132" font-size="14">“We chose SQLite for the</text>
-  <text class="m" x="58" y="150" font-size="14">cache. Next: test retries</text>
-  <text class="m" x="58" y="168" font-size="14">when the API is down.”</text>
-  <text class="m" x="58" y="196" font-size="12">saved via</text><text class="accent mono" x="116" y="196" font-size="12">ac-decide · ac-log</text>
+  <!-- Monday -->
+  <rect class="box" x="32" y="55" width="240" height="110" rx="8"/>
+  <text class="t" x="52" y="86" font-size="16" font-weight="600">Monday, Claude Code</text>
+  <text class="m" x="52" y="116" font-size="14">You: “We chose SQLite.</text>
+  <text class="m" x="52" y="138" font-size="14">Next, add retries.”</text>
 
-  <!-- write arrow -->
-  <path class="arrow" d="M272 137 H328" marker-end="url(#a)"/>
-  <text class="m" x="276" y="113" font-size="12">agent</text><text class="m" x="276" y="128" font-size="12">writes</text>
+  <path class="line" d="M274 110 H322" marker-end="url(#a)"/>
+  <text class="m" x="279" y="100" font-size="13">writes</text>
 
-  <!-- Private folder -->
-  <path class="folder" d="M335 62 h86 l14 14 h104 a10 10 0 0 1 10 10 v176 a10 10 0 0 1 -10 10 h-204 a10 10 0 0 1 -10 -10 v-190 a10 10 0 0 1 10 -10z" stroke-width="2"/>
-  <text class="t mono" x="350" y="104" font-size="14" font-weight="700">docs-agents-private/</text>
-  <text class="t mono" x="352" y="136" font-size="14">PRD.md</text>
-  <text class="t mono" x="352" y="160" font-size="14">STACK.md</text>
-  <text class="t mono" x="352" y="184" font-size="14">DECISIONS.md</text>
-  <text class="t mono" x="352" y="208" font-size="14">ROADMAP.md</text>
-  <text class="t mono" x="352" y="232" font-size="14">TASKS.md</text>
-  
-  <text class="m" x="352" y="258" font-size="12">… all plain Markdown</text>
+  <!-- Notes -->
+  <rect class="notes" x="330" y="30" width="240" height="160" rx="8" stroke-width="1.5"/>
+  <text class="t" x="352" y="64" font-size="17" font-weight="600">Your notes</text>
+  <text class="m mono" x="352" y="86" font-size="12">docs-agents-private/</text>
+  <text class="t" x="352" y="120" font-size="14">Goals</text>
+  <text class="t" x="352" y="144" font-size="14">Decisions</text>
+  <text class="t" x="352" y="168" font-size="14">Next steps</text>
 
-  <!-- read arrows -->
-  <path class="arrow" d="M551 160 H596 C614 160 612 92 628 92" marker-end="url(#a)"/>
-  <path class="arrow" d="M596 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
-  <text class="m" x="555" y="138" font-size="12">reads</text>
-  <text class="m" x="555" y="152" font-size="12">notes</text>
+  <path class="line" d="M572 110 H620" marker-end="url(#a)"/>
+  <text class="m" x="580" y="100" font-size="13">reads</text>
 
-  <!-- Later sessions -->
-  <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS · ANY AGENT</text>
-  <rect class="card" x="635" y="62" width="225" height="62" rx="10"/>
-  <text class="t" x="653" y="88" font-size="16" font-weight="600">Codex · tomorrow</text>
-  <text class="m" x="653" y="109" font-size="13">knows SQLite was chosen</text>
-  <rect class="card" x="635" y="192" width="225" height="62" rx="10"/>
-  <text class="t" x="653" y="218" font-size="16" font-weight="600">Cursor · next week</text>
-  <text class="m" x="653" y="239" font-size="13">starts on: test retries</text>
+  <!-- Tuesday -->
+  <rect class="box" x="628" y="55" width="240" height="110" rx="8"/>
+  <text class="t" x="648" y="86" font-size="16" font-weight="600">Tuesday, Codex</text>
+  <text class="m" x="648" y="116" font-size="14">Knows you chose SQLite.</text>
+  <text class="m" x="648" y="138" font-size="14">Starts on the retries.</text>
 
   <!-- Git boundary -->
-  <path class="dash" d="M437 274 V340"/>
-  <g transform="translate(437 306)">
-    <circle r="14" class="bg"/>
-    <rect class="lockbody" x="-7" y="-2" width="14" height="10" rx="2"/>
-    <path class="lockshackle" d="M-4 -2 V-5 a4 4 0 0 1 8 0 V-2"/>
-  </g>
-  <text class="m" x="459" y="311" font-size="12">excluded via <tspan class="mono">.git/info/exclude</tspan></text>
+  <path class="dash" d="M450 192 V258"/>
+  <text class="m" x="462" y="230" font-size="13">not shared: Git ignores this folder</text>
 
-  <rect class="git" x="40" y="344" width="820" height="62" rx="10"/>
-  <text class="t" x="60" y="371" font-size="16" font-weight="600">Team repository &amp; Git history</text>
-  <text class="m" x="60" y="392" font-size="13">Commits and pull requests contain your code, never your notes.</text>
-  <text class="ok" x="700" y="383" font-size="14" font-weight="600">✓ stays clean</text>
+  <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
+  <text class="t" x="52" y="292" font-size="16" font-weight="600">Shared repository</text>
+  <text class="m" x="52" y="316" font-size="14">Your teammates see your code. Your notes stay on your computer.</text>
 </svg>
