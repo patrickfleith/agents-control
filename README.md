@@ -1,7 +1,7 @@
 <h1 align="center">agents-control</h1>
 
 <p align="center">
-  <strong>Stay in charge of your work with coding agents.</strong>
+  <strong>Stay in control while your agents work for you.</strong>
 </p>
 
 <p align="center">
