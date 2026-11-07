@@ -14,20 +14,20 @@ Coding agents write code fast. Keeping the work organized is still your job.
 Goals and decisions end up scattered across chats and loose notes. It gets
 hard to see what was decided, why, and what to do next.
 
-agents-control gives each project a folder of notes for goals, decisions and
-planned work. You and your agents read and update the same notes. You set the
+agents-control gives you a personal notes folder in each project for goals,
+decisions and planned work. You and your agents read and update the same notes. You set the
 direction and make the decisions. Your agents are told to work from the notes
 and record what changed.
 
-**On your own project**, the plan and its decisions are written down, so you
-can review them and steer the work.
+**On your own project**, review the plan before your agent starts and check
+what changed afterward.
 
 **In a team repository**, keep personal notes for your part of the work. Setup
 tells Git to ignore the notes folder, so your teammates have no extra files to
 review. Nobody else needs to install anything.
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your notes stay local and out of the shared repository.">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Your personal notes stay out.">
 </p>
 
 [Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)
@@ -36,8 +36,7 @@ review. Nobody else needs to install anything.
 
 - **Use the same notes across tools.** Set up Claude Code, Codex or Cursor to
   read and update them.
-- **Notes you can read and edit.** They are plain Markdown files. Fix a decision
-  or delete an old note in your editor.
+- **Notes you can read and edit.** Open the Markdown files in your editor.
 - **Runs locally.** A small command-line tool and a few agent instructions.
   There is no service to host.
 
@@ -56,8 +55,8 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-Then ask: *"Plan the cache work around this decision. Let me review the plan
-before you build it. Record what changed when you're done."* If your needs change, ask your agent to use `ac-decide` to revise the decision
+Then ask: *"Plan the cache work using SQLite. Wait for my review before coding.
+Record what changed when you're done."* If your needs change, ask your agent to use `ac-decide` to revise the decision
 and record why.
 
 ## Why not keep a notes file myself?
