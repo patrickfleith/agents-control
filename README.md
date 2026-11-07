@@ -15,9 +15,9 @@ Goals and decisions end up scattered across chats and loose notes. It gets
 hard to see what was decided, why, and what to do next.
 
 agents-control gives you a personal notes folder in each project for goals,
-decisions and planned work. You and your agents read and update the same notes. You set the
-direction and make the decisions. Your agents are told to work from the notes
-and record what changed.
+decisions and planned work. You and your agents read and update the same notes. You set
+the direction and make the decisions. Your agents are told to work from the
+notes and record what changed.
 
 **On your own project**, review the plan before your agent starts and check
 what changed afterward.
@@ -27,7 +27,7 @@ tells Git to ignore the notes folder, so your teammates have no extra files to
 review. Nobody else needs to install anything.
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Your personal notes stay out.">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Git ignores your notes folder by default.">
 </p>
 
 [Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)
@@ -42,8 +42,9 @@ review. Nobody else needs to install anything.
 
 ## An example
 
-You tell your agent: *"Use ac-decide to record that we chose SQLite for the
-cache, because we don't want to run a database server."*
+The `ac-decide` workflow records decisions and their reasons. Tell your agent:
+*"Use ac-decide to record our choice of SQLite for the cache. We don't want to
+run a database server."*
 
 The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folder:
 
@@ -56,14 +57,12 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 ```
 
 Then ask: *"Plan the cache work using SQLite. Wait for my review before coding.
-Record what changed when you're done."* If your needs change, ask your agent to use `ac-decide` to revise the decision
-and record why.
+Record what changed when you're done."* Use `ac-decide` again to revise the decision and record why.
 
 ## Why not keep a notes file myself?
 
-You can. agents-control saves you from setting it up in every project. It
-creates the notes and gives your agents instructions for finding and updating
-them. The `ac-commit` workflow tells your agent to check that no private notes
+You can. agents-control creates a set of notes in each project and gives your
+agents instructions for finding and updating them. The `ac-commit` workflow tells your agent to check that no private notes
 are staged before it commits.
 
 Good to know: the notes stay in one folder on one computer. agents-control does

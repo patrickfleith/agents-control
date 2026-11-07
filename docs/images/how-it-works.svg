@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-labelledby="title desc">
   <title id="title">How agents-control organizes work with coding agents</title>
-  <desc id="desc">You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Your personal notes stay out.</desc>
+  <desc id="desc">You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Git ignores your notes folder by default.</desc>
   <style>
     .bg{fill:#ffffff;stroke:#d0d7de}
     .box{fill:#f6f8fa;stroke:#d0d7de}
@@ -66,5 +66,5 @@
 
   <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
   <text class="t" x="52" y="292" font-size="16" font-weight="600">Files you commit</text>
-  <text class="m" x="52" y="316" font-size="14">Your code goes into commits. Your personal notes stay out.</text>
+  <text class="m" x="52" y="316" font-size="14">Your code goes into commits. Git ignores your notes folder by default.</text>
 </svg>
