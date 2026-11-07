@@ -72,10 +72,10 @@
   <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS · ANY AGENT</text>
   <rect class="card" x="635" y="62" width="225" height="62" rx="10"/>
   <text class="t" x="653" y="88" font-size="16" font-weight="600">Codex · tomorrow</text>
-  <text class="m" x="653" y="109" font-size="13">starts with the decisions</text>
+  <text class="m" x="653" y="109" font-size="13">knows SQLite was chosen</text>
   <rect class="card" x="635" y="192" width="225" height="62" rx="10"/>
   <text class="t" x="653" y="218" font-size="16" font-weight="600">Cursor · next week</text>
-  <text class="m" x="653" y="239" font-size="13">picks up the next step</text>
+  <text class="m" x="653" y="239" font-size="13">starts on: test retries</text>
 
   <!-- Git boundary -->
   <path class="dash" d="M437 274 V340"/>

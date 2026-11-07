@@ -2,8 +2,8 @@
 
 <p align="center">
   <strong>Stop re-explaining your project to every coding agent.</strong><br>
-  Keep goals, decisions and next steps in private Markdown beside your code.<br>
-  Any agent you use can pick them up. Your team's Git history stays clean.
+  Private, Git-excluded project notes that Claude Code, Codex and Cursor<br>
+  read at the start of every session.
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
   <a href="#4-use-the-workflows">Workflows</a> ·
-  <a href="#how-it-works">How it works</a>
+  <a href="#see-it-in-action">See it in action</a>
 </p>
 
 <p align="center">
@@ -34,22 +34,22 @@ agent memory stays inside one tool.
 
 ## What agents-control gives you
 
-- **Sessions that build on each other.** Each new session is told where your
-  goals, decisions and open tasks live, and reads the ones relevant to the task.
+- **Sessions that build on each other.** Each new session runs
+  `agents-control context`, learns where your goals, decisions and tasks live,
+  and reads the relevant ones.
   You add to them in one sentence: *"Use ac-log to add a task: test retries when
   the API is down."*
-- **One context for every agent.** The installer sets up Claude Code and Codex;
-  Cursor takes one pasted rule. They all read the same files, so changing tools
-  doesn't mean starting over.
+- **One context for every agent.** Claude Code, Codex and Cursor read the same
+  files, so changing tools doesn't mean starting over. The installer sets up
+  Claude Code and Codex, including the `ac-` skills; Cursor reads the notes
+  through one pasted rule.
 - **Notes that stay yours.** The folder is listed in `.git/info/exclude`, so
   `git add .` skips it, and the `ac-commit` workflow checks the index before it
-  commits. Use it
-  in any checkout, including client code and open-source projects, without asking
-  anyone to adopt a tool.
-- **Plain Markdown.** Edit, prune or delete notes in your editor. Nothing is
-  hidden in a database.
-- **Tiny footprint.** About 400 lines of shell plus a set of `ac-` agent skills,
-  installed once per machine. No server, no network calls at runtime.
+  commits. Use it in any checkout, including client code and open-source
+  projects, without asking anyone to adopt a tool.
+- **Plain Markdown, tiny tool.** Edit or delete notes in your editor. About 400
+  lines of shell plus the skills, installed once per machine. No server, no
+  database, no network calls at runtime.
 
 ### Why not just keep an ignored notes folder?
 
@@ -62,17 +62,18 @@ notes current, and an `ac-commit` workflow that refuses to commit private files.
 | --- | :---: | :---: | :---: |
 | Committed `AGENTS.md` or memory bank | No | Yes | Manual |
 | Built-in agent memory | Yes | No | Automatic, opaque |
-| Ignored folder you set up yourself | Yes | If you tell them | Manual |
-| **agents-control** | **Yes** | **Yes** | **Templates + `ac-` skills** |
+| Ignored folder you set up yourself | Yes | Only if you write the rule | Manual |
+| **agents-control** | **Yes** | **Yes** | **Templates + skills** |
 
 **Limitation:** notes live in one checkout and are not synced or backed up. A
 fresh clone on another machine starts empty.
 
 ### See it in action
 
+Record a decision once, and next week's agent won't propose Redis again.
+
 You say *"Use ac-decide to record that we chose SQLite for the local cache."*
-The agent appends this to `docs-agents-private/DECISIONS.md`, including who
-made the call:
+The agent appends this to `docs-agents-private/DECISIONS.md`:
 
 ```markdown
 ### DEC-004 — SQLite for the local cache
