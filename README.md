@@ -1,25 +1,75 @@
-# agents-control
+<h1 align="center">agents-control</h1>
 
-**Keep control of your coding agents and your codebase.**
+<p align="center">
+  <strong>Stay in charge of your work with coding agents.</strong>
+</p>
 
-Carry your goals, decisions and next steps into the next coding session.
-Pick up where you left off, give different agents the same project context,
-and keep your personal working notes out of the team's Git history.
+<p align="center">
+  <a href="https://github.com/patrickfleith/agents-control/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/patrickfleith/agents-control/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg">
+</p>
 
-A lightweight framework for managing your coding agents' project context.
+Coding agents write code fast. Keeping the work organized is still your job.
+Goals and decisions end up scattered across chats and loose notes. It gets
+hard to see what was decided, why, and what to do next.
 
-[Get started](#quickstart) · [Try a workflow](#4-use-the-workflows) · [Details](#details)
+agents-control gives you a personal notes folder in each project for goals,
+decisions and planned work. You and your agents read and update the same
+notes. You set the direction and make the decisions. Your agents are told to
+work from the notes and record what changed.
 
-## Make each session build on the last
+**On your own project**, review the plan before your agent starts and check
+what changed afterward.
 
-- **Spend less time explaining the project.** Give your agent saved requirements,
-  technology choices and decisions to read before it starts work.
-- **Keep work moving across sessions.** Record open questions and concrete next
-  steps so you can return to a feature with a clear starting point.
-- **Keep your workflow personal.** Plan work in any Git checkout with local notes
-  and personal skills that preserve the repository's shared setup.
-- **Choose what your agents remember.** Read and edit their project context
-  yourself. Keep useful decisions and discard notes that no longer help.
+**In a team repository**, keep personal notes for your part of the work. Setup
+tells Git to ignore the notes folder, so your teammates have no extra files to
+review. Nobody else needs to install anything.
+
+<p align="center">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the outcome. You log them in your project notes: goals, decisions, tasks, stack, concerns, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Git ignores your notes folder by default.">
+</p>
+
+[Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)
+
+## What you get
+
+- **Use the same notes across tools.** Set up Claude Code, Codex or Cursor to
+  read and update them.
+- **Notes you can read and edit.** Open the Markdown files in your editor.
+- **Runs locally.** A small command-line tool and a few agent instructions.
+  There is no service to host.
+
+## An example
+
+The `ac-decide` workflow records decisions and their reasons. Tell your agent:
+*"Use ac-decide to record our choice of SQLite for the cache. We don't want to
+run a database server."*
+
+The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folder:
+
+```markdown
+### DEC-004 — SQLite for the cache
+
+**Decision:** Store the cache in SQLite.
+
+**Rationale:** We don't want to run a separate database server.
+```
+
+Then ask: *"Plan the cache work using SQLite. Wait for my review before coding.
+Record what changed when you're done."*
+
+If your needs change, use `ac-decide` again to revise the decision and record
+why.
+
+## Why not keep a notes file myself?
+
+You can. agents-control creates a set of notes in each project and gives your
+agents instructions for finding and updating them. The `ac-commit` workflow
+tells your agent to check that no private notes are staged before it commits.
+
+Good to know: the notes stay in one folder on one computer. agents-control does
+not sync or back them up.
 
 ## Quickstart
 
