@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-labelledby="title desc">
-  <title id="title">How agents-control carries notes between sessions</title>
-  <desc id="desc">On Monday you tell Claude Code a decision and a next step. The agent writes them into your private notes folder. On Tuesday, Codex reads the same notes and continues. The notes folder is excluded from Git, so the shared repository only receives code.</desc>
+  <title id="title">How agents-control organizes work with coding agents</title>
+  <desc id="desc">You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. The notes stay out of the shared repository, which only receives code.</desc>
   <style>
     .bg{fill:#ffffff;stroke:#d0d7de}
     .box{fill:#f6f8fa;stroke:#d0d7de}
@@ -30,35 +30,40 @@
 
   <rect class="bg" x="1" y="1" width="898" height="358" rx="12"/>
 
-  <!-- Monday -->
-  <rect class="box" x="32" y="55" width="240" height="110" rx="8"/>
-  <text class="t" x="52" y="86" font-size="16" font-weight="600">Monday, Claude Code</text>
-  <text class="m" x="52" y="116" font-size="14">You: “We chose SQLite.</text>
-  <text class="m" x="52" y="138" font-size="14">Next, add retries.”</text>
+  <!-- You -->
+  <rect class="box" x="32" y="45" width="220" height="140" rx="8"/>
+  <text class="t" x="52" y="78" font-size="16" font-weight="600">You</text>
+  <text class="m" x="52" y="110" font-size="14">Set the goals</text>
+  <text class="m" x="52" y="134" font-size="14">Make the decisions</text>
+  <text class="m" x="52" y="158" font-size="14">Review the work</text>
 
-  <path class="line" d="M274 110 H322" marker-end="url(#a)"/>
-  <text class="m" x="279" y="100" font-size="13">writes</text>
+  <path class="line" d="M254 115 H332" marker-end="url(#a)"/>
+  <text class="m" x="270" y="105" font-size="13">decide</text>
 
   <!-- Notes -->
-  <rect class="notes" x="330" y="30" width="240" height="160" rx="8" stroke-width="1.5"/>
-  <text class="t" x="352" y="64" font-size="17" font-weight="600">Your notes</text>
-  <text class="m mono" x="352" y="86" font-size="12">docs-agents-private/</text>
-  <text class="t" x="352" y="120" font-size="14">Goals</text>
-  <text class="t" x="352" y="144" font-size="14">Decisions</text>
-  <text class="t" x="352" y="168" font-size="14">Next steps</text>
+  <rect class="notes" x="340" y="30" width="220" height="170" rx="8" stroke-width="1.5"/>
+  <text class="t" x="360" y="62" font-size="17" font-weight="600">Project notes</text>
+  <text class="m mono" x="360" y="84" font-size="12">docs-agents-private/</text>
+  <text class="t" x="360" y="114" font-size="14">Goals</text>
+  <text class="t" x="360" y="136" font-size="14">Decisions</text>
+  <text class="t" x="360" y="158" font-size="14">Tasks</text>
+  <text class="t" x="360" y="180" font-size="14">Ideas and questions</text>
 
-  <path class="line" d="M572 110 H620" marker-end="url(#a)"/>
-  <text class="m" x="580" y="100" font-size="13">reads</text>
+  <path class="line" d="M562 95 H640" marker-end="url(#a)"/>
+  <text class="m" x="578" y="85" font-size="13">guide</text>
+  <path class="line" d="M640 140 H568" marker-end="url(#a)"/>
+  <text class="m" x="574" y="160" font-size="13">update</text>
 
-  <!-- Tuesday -->
-  <rect class="box" x="628" y="55" width="240" height="110" rx="8"/>
-  <text class="t" x="648" y="86" font-size="16" font-weight="600">Tuesday, Codex</text>
-  <text class="m" x="648" y="116" font-size="14">Knows you chose SQLite.</text>
-  <text class="m" x="648" y="138" font-size="14">Starts on the retries.</text>
+  <!-- Agents -->
+  <rect class="box" x="648" y="45" width="220" height="140" rx="8"/>
+  <text class="t" x="668" y="78" font-size="16" font-weight="600">Your agents</text>
+  <text class="m" x="668" y="100" font-size="13">Claude Code, Codex, Cursor</text>
+  <text class="m" x="668" y="134" font-size="14">Follow the plan</text>
+  <text class="m" x="668" y="158" font-size="14">Record what changed</text>
 
   <!-- Git boundary -->
-  <path class="dash" d="M450 192 V258"/>
-  <text class="m" x="462" y="230" font-size="13">not shared: Git ignores this folder</text>
+  <path class="dash" d="M450 202 V258"/>
+  <text class="m" x="462" y="235" font-size="13">not shared: Git ignores this folder</text>
 
   <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
   <text class="t" x="52" y="292" font-size="16" font-weight="600">Shared repository</text>

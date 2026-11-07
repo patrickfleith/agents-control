@@ -1,7 +1,7 @@
 <h1 align="center">agents-control</h1>
 
 <p align="center">
-  <strong>Stop explaining your project to your coding agent again and again.</strong>
+  <strong>Stay in charge of your work with coding agents.</strong>
 </p>
 
 <p align="center">
@@ -10,34 +10,36 @@
   <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg">
 </p>
 
-Coding agents forget your project when a session ends. The next day, you explain
-the goal again. You explain what you decided and why. You explain what to do
-next. If you switch to another agent, you start over.
+Coding agents write code fast. Keeping the work organized is still your job.
+What are the goals? What did we decide, and why? What comes next? Without a
+clear place for these answers, they get lost in old chats and loose notes.
 
-agents-control gives your agents a notebook for each project. It holds your
-goals, your decisions and your next steps. Your agent is set up to read it when a
-session starts, and adds to it when you ask. Tomorrow, any agent can pick up where you
-stopped.
+agents-control gives each project a small set of notes for this: goals,
+decisions, tasks, ideas and open questions. You and your agents read and update
+the same notes. You set the direction and make the decisions. Your agents work
+from the notes and record what changed.
 
-**Working alone?** Keep a project moving over days and weeks, across Claude Code,
-Codex and Cursor.
+**On your own project**, the plan, the decisions and the next steps stay in one
+place, whichever agent you use.
 
-**Working in a team?** The notebook stays on your computer. Git leaves it out
-of the shared repository, so your teammates see your code, not your notes. Nobody
-else needs to install anything.
+**In a team repository**, the notes are yours alone. Git leaves them out of the
+shared repository, so you can plan your part of the work without adding files
+for your teammates to review. Nobody else needs to install anything.
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="820" alt="On Monday you tell Claude Code a decision and a next step. The agent writes them into the private notes folder. On Tuesday, Codex reads the same notes and continues. The notes folder is excluded from Git, so the shared repository only receives code.">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. The notes stay out of the shared repository, which only receives code.">
 </p>
 
 [Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)
 
 ## What you get
 
-- **Sessions that build on each other.** Goals, decisions and next steps carry
-  over from one session to the next.
+- **One place for the plan.** Goals, decisions, tasks and ideas live in a few
+  short files instead of many chats.
+- **Decisions with their reasons.** Each decision says why it was made, so you
+  and your agents can follow it later, or change it on purpose.
 - **The same notes for every agent.** Claude Code, Codex and Cursor read the same
-  files. Changing tools does not mean starting over.
+  files, so you can switch tools and keep the same plan.
 - **Notes you can read and edit.** They are plain Markdown files. Fix a decision
   or delete an old note in your editor.
 - **Nothing to run.** A small command-line tool and a few agent instructions.
@@ -58,8 +60,8 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-Next week, you ask a different agent to work on the cache. It reads this entry
-first, so it builds on SQLite instead of suggesting a new database.
+Later, an agent working on the cache finds this decision and builds on it
+instead of suggesting a new database. If you change your mind, you update the decision.
 
 ## Why not keep a notes file myself?
 
