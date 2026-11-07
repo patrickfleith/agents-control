@@ -11,8 +11,8 @@
 </p>
 
 Coding agents write code fast. Keeping the work organized is still your job.
-What are the goals? What did we decide, and why? What comes next? Without a
-clear place for these answers, they get lost in old chats and loose notes.
+Goals and decisions end up scattered across chats and loose notes. It gets
+hard to see what was decided, why, and what to do next.
 
 agents-control gives each project a small set of notes for this: goals,
 decisions, tasks, ideas and open questions. You and your agents read and update
@@ -27,7 +27,7 @@ shared repository, so you can plan your part of the work without adding files
 for your teammates to review. Nobody else needs to install anything.
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. The notes stay out of the shared repository, which only receives code.">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your notes stay local and out of the shared repository.">
 </p>
 
 [Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)
@@ -36,14 +36,12 @@ for your teammates to review. Nobody else needs to install anything.
 
 - **One place for the plan.** Goals, decisions, tasks and ideas live in a few
   short files instead of many chats.
-- **Decisions with their reasons.** Each decision says why it was made, so you
-  and your agents can follow it later, or change it on purpose.
 - **The same notes for every agent.** Claude Code, Codex and Cursor read the same
   files, so you can switch tools and keep the same plan.
 - **Notes you can read and edit.** They are plain Markdown files. Fix a decision
   or delete an old note in your editor.
-- **Nothing to run.** A small command-line tool and a few agent instructions.
-  No server, no database, no account.
+- **Runs locally.** A small command-line tool and a few agent instructions.
+  There is no service to host.
 
 ## An example
 
@@ -60,15 +58,15 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-Later, an agent working on the cache finds this decision and builds on it
-instead of suggesting a new database. If you change your mind, you update the decision.
+When you later ask an agent to build the cache, it reads the decision and uses
+SQLite. If your needs change, use `ac-decide` again to record the new decision.
 
 ## Why not keep a notes file myself?
 
 You can. agents-control saves you from setting it up in every project. It
-creates the notes, tells each agent where to find them, gives agents simple
-commands to keep them up to date, and checks that your notes stay out of your
-commits.
+creates the notes, tells each agent where to find them, and gives agents simple
+commands to keep them up to date. Its commit command, `ac-commit`, checks that
+your notes are not included.
 
 Good to know: the notes stay in one folder on one computer. They are not synced
 or backed up.
