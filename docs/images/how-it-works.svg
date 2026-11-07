@@ -12,7 +12,7 @@
     .accent{fill:#1d4ed8}
     .arrow{stroke:#3b82f6;stroke-width:2;fill:none}
     .head{fill:#3b82f6}
-    .block{stroke:#cf222e;stroke-width:2;fill:none}
+    .lockbody{fill:#59636e}.lockshackle{stroke:#59636e;stroke-width:2;fill:none}
     .dash{stroke:#8c959f;stroke-width:1.5;stroke-dasharray:5 5;fill:none}
     .ok{fill:#1a7f37;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
     @media (prefers-color-scheme: dark){
@@ -24,7 +24,7 @@
       .accent{fill:#79b8ff}
       .arrow{stroke:#4c8dff}
       .head{fill:#4c8dff}
-      .block{stroke:#ff7b72}
+      .lockbody{fill:#9198a1}.lockshackle{stroke:#9198a1}
       .dash{stroke:#6e7681}
       .ok{fill:#3fb950}
     }
@@ -41,14 +41,15 @@
   <text class="m" x="40" y="48" font-size="13" font-weight="600" letter-spacing="1">TODAY</text>
   <rect class="card" x="40" y="62" width="230" height="150" rx="10"/>
   <text class="t" x="58" y="92" font-size="17" font-weight="600">Claude Code</text>
-  <text class="m" x="58" y="122" font-size="14">“We chose SQLite for the</text>
-  <text class="m" x="58" y="141" font-size="14">cache. Next: test retries</text>
-  <text class="m" x="58" y="160" font-size="14">when the API is down.”</text>
-  <text class="accent mono" x="58" y="194" font-size="13">ac-decide · ac-log</text>
+  <text class="m" x="58" y="113" font-size="11" font-weight="600" letter-spacing="0.5">YOU SAY</text>
+  <text class="m" x="58" y="132" font-size="14">“We chose SQLite for the</text>
+  <text class="m" x="58" y="150" font-size="14">cache. Next: test retries</text>
+  <text class="m" x="58" y="168" font-size="14">when the API is down.”</text>
+  <text class="m" x="58" y="196" font-size="12">via skills</text><text class="accent mono" x="116" y="196" font-size="12">ac-decide · ac-log</text>
 
   <!-- write arrow -->
   <path class="arrow" d="M272 137 H328" marker-end="url(#a)"/>
-  <text class="m" x="276" y="127" font-size="12">saves</text>
+  <text class="m" x="276" y="113" font-size="12">agent</text><text class="m" x="276" y="128" font-size="12">writes</text>
 
   <!-- Private folder -->
   <path class="folder" d="M335 62 h86 l14 14 h140 a10 10 0 0 1 10 10 v176 a10 10 0 0 1 -10 10 h-240 a10 10 0 0 1 -10 -10 v-190 a10 10 0 0 1 10 -10z" stroke-width="2"/>
@@ -58,32 +59,35 @@
   <text class="t mono" x="352" y="184" font-size="14">DECISIONS.md</text> <text class="m" x="476" y="184" font-size="13">what &amp; why</text>
   <text class="t mono" x="352" y="208" font-size="14">ROADMAP.md</text>   <text class="m" x="476" y="208" font-size="13">what's next</text>
   <text class="t mono" x="352" y="232" font-size="14">TASKS.md</text>     <text class="m" x="476" y="232" font-size="13">your to-dos</text>
-  <text class="m" x="352" y="260" font-size="12">plain Markdown you can read &amp; edit</text>
+  <text class="m" x="352" y="256" font-size="13">…</text>
+  <text class="m" x="372" y="258" font-size="12">plain Markdown you can edit</text>
 
   <!-- read arrows -->
-  <path class="arrow" d="M587 120 C610 120 612 92 628 92" marker-end="url(#a)"/>
-  <path class="arrow" d="M587 200 C610 200 612 222 628 222" marker-end="url(#a)"/>
-  <text class="m" x="592" y="166" font-size="12">reads</text>
+  <path class="arrow" d="M587 160 H600 C612 160 612 92 628 92" marker-end="url(#a)"/>
+  <path class="arrow" d="M600 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
 
   <!-- Later sessions -->
-  <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS</text>
+  <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS · ANY AGENT</text>
   <rect class="card" x="635" y="62" width="225" height="62" rx="10"/>
   <text class="t" x="653" y="88" font-size="16" font-weight="600">Codex · tomorrow</text>
   <text class="m" x="653" y="109" font-size="13">starts with the decisions</text>
   <rect class="card" x="635" y="192" width="225" height="62" rx="10"/>
   <text class="t" x="653" y="218" font-size="16" font-weight="600">Cursor · next week</text>
   <text class="m" x="653" y="239" font-size="13">picks up the next step</text>
+  <text class="m" x="635" y="150" font-size="12">each runs <tspan class="accent mono">agents-control context</tspan></text>
+  <text class="m" x="635" y="168" font-size="12">and reads the saved notes</text>
 
   <!-- Git boundary -->
   <path class="dash" d="M460 274 V340"/>
   <g transform="translate(460 306)">
-    <circle r="13" class="bg"/>
-    <path class="block" d="M-6 -6 L6 6 M6 -6 L-6 6"/>
+    <circle r="14" class="bg"/>
+    <rect class="lockbody" x="-7" y="-2" width="14" height="10" rx="2"/>
+    <path class="lockshackle" d="M-4 -2 V-5 a4 4 0 0 1 8 0 V-2"/>
   </g>
-  <text class="m mono" x="482" y="311" font-size="12">.git/info/exclude</text>
+  <text class="m" x="482" y="311" font-size="12">excluded via <tspan class="mono">.git/info/exclude</tspan></text>
 
   <rect class="git" x="40" y="344" width="820" height="62" rx="10"/>
   <text class="t" x="60" y="371" font-size="16" font-weight="600">Team repository &amp; Git history</text>
-  <text class="m" x="60" y="392" font-size="13">Commits, pull requests and shared docs stay exactly as the team expects.</text>
-  <text class="ok" x="660" y="383" font-size="14" font-weight="600">✓ no personal notes</text>
+  <text class="m" x="60" y="392" font-size="13">Commits and pull requests contain your code, never your notes.</text>
+  <text class="ok" x="700" y="383" font-size="14" font-weight="600">✓ stays clean</text>
 </svg>

@@ -1,9 +1,9 @@
 <h1 align="center">agents-control</h1>
 
 <p align="center">
-  <strong>Private project memory for your coding agents.</strong><br>
-  Goals, decisions and next steps in plain Markdown beside your code.<br>
-  Shared by Claude Code, Codex and Cursor. Never committed to Git.
+  <strong>Stop re-explaining your project to every coding agent.</strong><br>
+  Keep goals, decisions and next steps in private Markdown beside your code.<br>
+  Claude Code, Codex and Cursor read them. Your team's Git history never sees them.
 </p>
 
 <p align="center">
@@ -15,11 +15,11 @@
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
   <a href="#4-use-the-workflows">Workflows</a> ·
-  <a href="#details">How it works</a>
+  <a href="#how-it-works">How it works</a>
 </p>
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="860" alt="Today's Claude Code session saves decisions and next steps to docs-agents-private/. Later sessions in Codex and Cursor read the same notes. The folder is excluded from Git, so the team's history holds no personal notes.">
+  <img src="docs/images/how-it-works.svg" width="860" alt="In today's Claude Code session you tell the agent about a decision and a next step. Through the ac-decide and ac-log skills, the agent writes them to docs-agents-private/. In later sessions, any agent runs agents-control context and reads the same notes. The folder is listed in .git/info/exclude, so the team's commits contain no personal notes.">
 </p>
 
 ## The problem
@@ -28,28 +28,42 @@ Every agent session starts cold. You explain the goal again, the stack again,
 and why you already ruled out the obvious approach. Switch from Claude Code to
 Codex and you explain it all a third time.
 
-The usual fixes have a cost. A long `AGENTS.md` or memory bank lands in the
-team's repository, where your half-formed plans don't belong. Chat history is
-tied to one tool and too long to reread.
+The usual fixes either leak or don't travel. A personal `AGENTS.md` or memory
+bank gets committed, so your half-formed plans show up in code review. Built-in
+agent memory stays inside one tool.
 
 ## What agents-control gives you
 
-- **Sessions that build on each other.** Your agent starts by reading the
-  requirements, technology choices and decisions you saved last time, then picks
-  up the next step.
+- **Sessions that build on each other.** A line in your personal agent
+  instructions asks each agent to run `agents-control context` at session start
+  and read the relevant notes. You add to them in one sentence: *"Use ac-decide
+  to record that we chose SQLite for the cache."*
 - **One context for every agent.** Claude Code, Codex and Cursor read the same
   files, so changing tools doesn't mean starting over.
-- **Notes that stay yours.** The folder is listed in `.git/info/exclude`. Use it
-  in any checkout, including client code and open-source projects, without
-  touching the team's files or asking anyone to adopt a tool.
-- **Memory you can read.** Plain Markdown, no database or server. Edit a decision,
-  delete a stale note, or open the files in your editor.
+- **Notes that stay yours.** The folder is listed in `.git/info/exclude`, so
+  `git add .` skips it, and `ac-commit` stops if private files are staged. Use it
+  in any checkout, including client code and open-source projects, without asking
+  anyone to adopt a tool.
+- **Memory you can read.** Plain Markdown you can edit, prune or open in your
+  editor. No database, no server, no network calls: a shell CLI and a set of
+  `ac-` agent skills, installed once per machine.
 
-| Approach | Where the context lives | Shared across agents | Stays out of Git |
-| --- | --- | :---: | :---: |
-| Committed `AGENTS.md` / memory bank | In the team repository | ✓ | ✗ |
-| Built-in agent memory | Inside one tool | ✗ | ✓ |
-| **agents-control** | Local Markdown beside your code | ✓ | ✓ |
+### Why not just keep an ignored notes folder?
+
+You can, and agents-control is not much more than that. It adds the parts you
+would otherwise repeat in every project: an instruction that points each agent
+at the notes, a document structure agents know how to use, skills that keep the
+notes current, and a check before commits.
+
+| Approach | Out of the team repo | Agents find it | Structure and upkeep |
+| --- | :---: | :---: | :---: |
+| Committed `AGENTS.md` or memory bank | No | Yes | Manual |
+| Built-in agent memory | Yes | One tool only | Automatic, opaque |
+| Ignored folder you set up yourself | Yes | If you tell them | Manual |
+| **agents-control** | **Yes** | **Yes** (Cursor: one-time paste) | **Skills** |
+
+Good to know: notes live in one checkout and are not synced or backed up. A
+fresh clone on another machine starts empty.
 
 ## Quickstart
 
