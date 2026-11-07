@@ -62,7 +62,6 @@
   <text class="m" x="668" y="158" font-size="14">Record what changed</text>
 
   <!-- Git boundary -->
-  <text class="m" x="450" y="222" font-size="13" text-anchor="middle">Your notes folder is ignored by Git.</text>
 
   <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
   <text class="t" x="52" y="292" font-size="16" font-weight="600">Files you commit</text>
