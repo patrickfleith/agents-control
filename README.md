@@ -27,7 +27,7 @@ tells Git to ignore the notes folder, so your teammates have no extra files to
 review. Nobody else needs to install anything.
 
 <p align="center">
-  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Git ignores your notes folder by default.">
+  <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the outcome. You log them in your project notes: goals, decisions, tasks, stack, concerns, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Git ignores your notes folder by default.">
 </p>
 
 [Quickstart](#quickstart) · [Workflows](#4-use-the-workflows) · [How it works](#how-it-works)

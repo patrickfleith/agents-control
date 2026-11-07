@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" role="img" aria-labelledby="title desc">
   <title id="title">How agents-control organizes work with coding agents</title>
-  <desc id="desc">You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Git ignores your notes folder by default.</desc>
+  <desc id="desc">You set goals, make decisions and review the outcome. You log them in your project notes: goals, decisions, tasks, stack, concerns, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your code goes into commits. Git ignores your notes folder by default.</desc>
   <style>
     .bg{fill:#ffffff;stroke:#d0d7de}
     .box{fill:#f6f8fa;stroke:#d0d7de}
@@ -35,19 +35,21 @@
   <text class="t" x="52" y="78" font-size="16" font-weight="600">You</text>
   <text class="m" x="52" y="110" font-size="14">Set the goals</text>
   <text class="m" x="52" y="134" font-size="14">Make the decisions</text>
-  <text class="m" x="52" y="158" font-size="14">Review the work</text>
+  <text class="m" x="52" y="158" font-size="14">Review the outcome</text>
 
   <path class="line" d="M254 115 H332" marker-end="url(#a)"/>
-  <text class="m" x="270" y="105" font-size="13">decide</text>
+  <text class="m" x="282" y="105" font-size="13">log</text>
 
   <!-- Notes -->
-  <rect class="notes" x="340" y="30" width="220" height="170" rx="8" stroke-width="1.5"/>
+  <rect class="notes" x="340" y="30" width="220" height="204" rx="8" stroke-width="1.5"/>
   <text class="t" x="360" y="62" font-size="17" font-weight="600">Project notes</text>
   <text class="m" x="360" y="84" font-size="13">Plain Markdown files</text>
-  <text class="t" x="360" y="114" font-size="14">Goals</text>
-  <text class="t" x="360" y="136" font-size="14">Decisions</text>
-  <text class="t" x="360" y="158" font-size="14">Tasks</text>
-  <text class="t" x="360" y="180" font-size="14">Ideas and questions</text>
+  <text class="t" x="360" y="112" font-size="14">Goals</text>
+  <text class="t" x="360" y="133" font-size="14">Decisions</text>
+  <text class="t" x="360" y="154" font-size="14">Tasks</text>
+  <text class="t" x="360" y="175" font-size="14">Stack</text>
+  <text class="t" x="360" y="196" font-size="14">Concerns</text>
+  <text class="t" x="360" y="217" font-size="14">Ideas and questions</text>
 
   <path class="line" d="M562 95 H640" marker-end="url(#a)"/>
   <text class="m" x="578" y="85" font-size="13">guide</text>
