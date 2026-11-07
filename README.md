@@ -15,9 +15,9 @@ Goals and decisions end up scattered across chats and loose notes. It gets
 hard to see what was decided, why, and what to do next.
 
 agents-control gives each project a folder of notes for goals, decisions and
-planned work. You and your agents read and update
-the same notes. You set the direction and make the decisions. Your agents are told
-to work from the notes and record what changed.
+planned work. You and your agents read and update the same notes. You set the
+direction and make the decisions. Your agents are told to work from the notes
+and record what changed.
 
 **On your own project**, the plan and its decisions are written down, so you
 can review them and steer the work.
