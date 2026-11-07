@@ -3,7 +3,7 @@
 <p align="center">
   <strong>Stop re-explaining your project to every coding agent.</strong><br>
   Private, Git-excluded project notes that Claude Code, Codex and Cursor<br>
-  read at the start of every session.
+  are told to load at the start of each session.
 </p>
 
 <p align="center">
@@ -48,10 +48,11 @@ agent memory stays inside one tool.
   commits. Use it in any checkout, including client code and open-source
   projects, without asking anyone to adopt a tool.
 - **Plain Markdown, tiny tool.** Edit or delete notes in your editor. About 400
-  lines of shell plus the skills, installed once per machine. No server, no
-  database, no network calls at runtime.
+  lines of shell, no server, no database, no network calls at runtime. The
+  installer adds the `ac-` skills and one short instruction to your global
+  `~/.claude/CLAUDE.md` and Codex `AGENTS.md`.
 
-### Why not just keep an ignored notes folder?
+## Why not just keep an ignored notes folder?
 
 You can, and agents-control is not much more than that. It adds the parts you
 would otherwise repeat in every project: an instruction that points each agent
@@ -63,12 +64,12 @@ notes current, and an `ac-commit` workflow that refuses to commit private files.
 | Committed `AGENTS.md` or memory bank | No | Yes | Manual |
 | Built-in agent memory | Yes | No | Automatic, opaque |
 | Ignored folder you set up yourself | Yes | Only if you write the rule | Manual |
-| **agents-control** | **Yes** | **Yes** | **Templates + skills** |
+| **agents-control** | **Yes** | **Yes** (Cursor: one pasted rule) | **Templates + skills** |
 
 **Limitation:** notes live in one checkout and are not synced or backed up. A
 fresh clone on another machine starts empty.
 
-### See it in action
+## See it in action
 
 Record a decision once, and next week's agent won't propose Redis again.
 
@@ -96,14 +97,15 @@ Documents: /home/you/code/shop-api/docs-agents-private
 ...
 Read relevant documents, then update them when the user asks or the work needs it.
 ...
-| Document     | Purpose                                 |
+| Document | Purpose |
+| --- | --- |
+| PRD.md | Goals, requirements and users |
 | DECISIONS.md | Open and settled decisions with reasons |
-| TASKS.md     | Personal tasks                          |
 ...
 ```
 
-When the task touches the cache, the agent opens `DECISIONS.md`, sees DEC-004
-and its rationale, and starts from SQLite instead of proposing Redis again.
+When the task touches the cache, the agent reads DEC-004 and its rationale
+first.
 
 ## Quickstart
 

@@ -65,8 +65,8 @@
   <!-- read arrows -->
   <path class="arrow" d="M551 160 H596 C614 160 612 92 628 92" marker-end="url(#a)"/>
   <path class="arrow" d="M596 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
-  <text class="m" x="555" y="138" font-size="12">loads</text>
-  <text class="m" x="555" y="152" font-size="12">at start</text>
+  <text class="m" x="555" y="138" font-size="12">reads</text>
+  <text class="m" x="555" y="152" font-size="12">notes</text>
 
   <!-- Later sessions -->
   <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS · ANY AGENT</text>
