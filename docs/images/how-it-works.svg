@@ -45,7 +45,7 @@
   <text class="m" x="58" y="132" font-size="14">“We chose SQLite for the</text>
   <text class="m" x="58" y="150" font-size="14">cache. Next: test retries</text>
   <text class="m" x="58" y="168" font-size="14">when the API is down.”</text>
-  <text class="m" x="58" y="196" font-size="12">via skills</text><text class="accent mono" x="116" y="196" font-size="12">ac-decide · ac-log</text>
+  <text class="m" x="58" y="196" font-size="12">saved via</text><text class="accent mono" x="116" y="196" font-size="12">ac-decide · ac-log</text>
 
   <!-- write arrow -->
   <path class="arrow" d="M272 137 H328" marker-end="url(#a)"/>
@@ -65,7 +65,7 @@
   <!-- read arrows -->
   <path class="arrow" d="M551 160 H596 C614 160 612 92 628 92" marker-end="url(#a)"/>
   <path class="arrow" d="M596 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
-  <text class="m" x="555" y="138" font-size="12">reads</text>
+  <text class="m" x="555" y="138" font-size="12">loads</text>
   <text class="m" x="555" y="152" font-size="12">at start</text>
 
   <!-- Later sessions -->

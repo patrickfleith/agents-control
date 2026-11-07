@@ -3,7 +3,7 @@
 <p align="center">
   <strong>Stop re-explaining your project to every coding agent.</strong><br>
   Keep goals, decisions and next steps in private Markdown beside your code.<br>
-  Claude Code, Codex and Cursor read them. Your team's Git history stays clean.
+  Any agent you use can pick them up. Your team's Git history stays clean.
 </p>
 
 <p align="center">
@@ -28,25 +28,28 @@ Every agent session starts cold. You explain the goal again, the stack again,
 and why you already ruled out the obvious approach. Switch from Claude Code to
 Codex and you explain it all a third time.
 
-The usual fixes either leak or don't travel. A personal `AGENTS.md` or memory
-bank sits in the repo, one `git add .` away from code review. Built-in
+The usual fixes either leak or don't travel. A personal `AGENTS.md` or memory-bank
+folder sits in the repo, one `git add .` away from code review. Built-in
 agent memory stays inside one tool.
 
 ## What agents-control gives you
 
-- **Sessions that build on each other.** Each new session starts by reading
-  your goals, decisions and open tasks. You add to them in one sentence:
-  *"Use ac-decide to record that we chose SQLite for the cache."*
-- **One context for every agent.** Claude Code, Codex and Cursor read the same
-  files, so changing tools doesn't mean starting over. Cursor needs a one-time
-  rule paste.
+- **Sessions that build on each other.** Each new session is told where your
+  goals, decisions and open tasks live, and reads the ones relevant to the task.
+  You add to them in one sentence: *"Use ac-log to add a task: test retries when
+  the API is down."*
+- **One context for every agent.** The installer sets up Claude Code and Codex;
+  Cursor takes one pasted rule. They all read the same files, so changing tools
+  doesn't mean starting over.
 - **Notes that stay yours.** The folder is listed in `.git/info/exclude`, so
-  `git add .` skips it, and `ac-commit` stops if private files are staged. Use it
+  `git add .` skips it, and the `ac-commit` workflow checks the index before it
+  commits. Use it
   in any checkout, including client code and open-source projects, without asking
   anyone to adopt a tool.
-- **Memory you can read.** Plain Markdown you can edit, prune or open in your
-  editor. No database, no server, no network calls at runtime: a few hundred
-  lines of shell and a set of `ac-` agent skills, installed once per machine.
+- **Plain Markdown.** Edit, prune or delete notes in your editor. Nothing is
+  hidden in a database.
+- **Tiny footprint.** About 400 lines of shell plus a set of `ac-` agent skills,
+  installed once per machine. No server, no network calls at runtime.
 
 ### Why not just keep an ignored notes folder?
 
@@ -65,10 +68,11 @@ notes current, and an `ac-commit` workflow that refuses to commit private files.
 **Limitation:** notes live in one checkout and are not synced or backed up. A
 fresh clone on another machine starts empty.
 
-### What a saved decision looks like
+### See it in action
 
 You say *"Use ac-decide to record that we chose SQLite for the local cache."*
-The agent appends this to `docs-agents-private/DECISIONS.md`:
+The agent appends this to `docs-agents-private/DECISIONS.md`, including who
+made the call:
 
 ```markdown
 ### DEC-004 — SQLite for the local cache
@@ -81,8 +85,24 @@ Date: 2026-11-03 14:20
 **Rationale:** We need persistence without running a separate database service.
 ```
 
-Next week, before Cursor touches the cache code, it reads this entry and builds
-on the decision instead of proposing Redis.
+In the next session, whichever agent you open runs `agents-control context`
+and gets the folder's location and a guide to its documents:
+
+```text
+$ agents-control context
+Private agents-control context for /home/you/code/shop-api
+Documents: /home/you/code/shop-api/docs-agents-private
+...
+Read relevant documents, then update them when the user asks or the work needs it.
+...
+| Document     | Purpose                                 |
+| DECISIONS.md | Open and settled decisions with reasons |
+| TASKS.md     | Personal tasks                          |
+...
+```
+
+When the task touches the cache, the agent opens `DECISIONS.md`, sees DEC-004
+and its rationale, and starts from SQLite instead of proposing Redis again.
 
 ## Quickstart
 
