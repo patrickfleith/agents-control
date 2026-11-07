@@ -62,8 +62,7 @@
   <text class="m" x="668" y="158" font-size="14">Record what changed</text>
 
   <!-- Git boundary -->
-  <path class="dash" d="M450 202 V258"/>
-  <text class="m" x="462" y="235" font-size="13">not shared</text>
+  <text class="m" x="450" y="232" font-size="13" text-anchor="middle">Excluded from Git</text>
 
   <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
   <text class="t" x="52" y="292" font-size="16" font-weight="600">Shared repository</text>

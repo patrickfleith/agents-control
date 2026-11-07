@@ -19,12 +19,12 @@ decisions, tasks, ideas and open questions. You and your agents read and update
 the same notes. You set the direction and make the decisions. Your agents are told
 to work from the notes and record what changed.
 
-**On your own project**, you can see where the plan stands at any time, even
-as you switch between agents.
+**On your own project**, keep your plan and decisions in one place as you
+switch between agents.
 
-**In a team repository**, the notes are yours alone. Git leaves them out of the
-shared repository, so you can plan your part of the work without adding files
-for your teammates to review. Nobody else needs to install anything.
+**In a team repository**, keep personal notes for your part of the work. Setup
+tells Git to ignore the notes folder, so your teammates have no extra files to
+review. Nobody else needs to install anything.
 
 <p align="center">
   <img src="docs/images/how-it-works.svg" width="820" alt="You set goals, make decisions and review the work. These go into your project notes: goals, decisions, tasks, ideas and questions. Your agents, such as Claude Code, Codex and Cursor, read the notes to follow the plan and update them with what changed. Your notes stay local and out of the shared repository.">
@@ -57,7 +57,8 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 ```
 
 Later, ask your agent: *"Build the cache using this decision, then record what
-changed in my project notes."* If your needs change, use `ac-decide` again to record the new decision.
+changed in my project notes."* If your needs change, ask your agent to use `ac-decide` to revise the decision
+and record why.
 
 ## Why not keep a notes file myself?
 
