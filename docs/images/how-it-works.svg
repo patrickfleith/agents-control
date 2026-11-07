@@ -63,9 +63,9 @@
 
   <!-- Git boundary -->
   <path class="dash" d="M450 202 V258"/>
-  <text class="m" x="462" y="235" font-size="13">not shared: Git ignores this folder</text>
+  <text class="m" x="462" y="235" font-size="13">not shared</text>
 
   <rect class="box" x="32" y="262" width="836" height="70" rx="8"/>
   <text class="t" x="52" y="292" font-size="16" font-weight="600">Shared repository</text>
-  <text class="m" x="52" y="316" font-size="14">Your teammates see your code. Your notes stay on your computer.</text>
+  <text class="m" x="52" y="316" font-size="14">Share your code with teammates. Git ignores your notes folder.</text>
 </svg>

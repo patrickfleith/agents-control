@@ -16,11 +16,11 @@ hard to see what was decided, why, and what to do next.
 
 agents-control gives each project a small set of notes for this: goals,
 decisions, tasks, ideas and open questions. You and your agents read and update
-the same notes. You set the direction and make the decisions. Your agents work
-from the notes and record what changed.
+the same notes. You set the direction and make the decisions. Your agents are told
+to work from the notes and record what changed.
 
-**On your own project**, the plan, the decisions and the next steps stay in one
-place, whichever agent you use.
+**On your own project**, you can see where the plan stands at any time, even
+as you switch between agents.
 
 **In a team repository**, the notes are yours alone. Git leaves them out of the
 shared repository, so you can plan your part of the work without adding files
@@ -56,8 +56,8 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-Later, ask your agent: *"Build the cache using the decision in my project
-notes."* If your needs change, use `ac-decide` again to record the new decision.
+Later, ask your agent: *"Build the cache using this decision, then record what
+changed in my project notes."* If your needs change, use `ac-decide` again to record the new decision.
 
 ## Why not keep a notes file myself?
 
@@ -66,8 +66,8 @@ creates the notes and gives your agents instructions for finding and updating
 them. The `ac-commit` workflow tells your agent to check that no private notes
 are staged before it commits.
 
-Good to know: the notes stay in one folder on one computer. They are not synced
-or backed up.
+Good to know: the notes stay in one folder on one computer. agents-control does
+not sync or back them up.
 
 ## Quickstart
 
