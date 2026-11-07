@@ -52,19 +52,21 @@
   <text class="m" x="276" y="113" font-size="12">agent</text><text class="m" x="276" y="128" font-size="12">writes</text>
 
   <!-- Private folder -->
-  <path class="folder" d="M335 62 h86 l14 14 h140 a10 10 0 0 1 10 10 v176 a10 10 0 0 1 -10 10 h-240 a10 10 0 0 1 -10 -10 v-190 a10 10 0 0 1 10 -10z" stroke-width="2"/>
-  <text class="t mono" x="352" y="104" font-size="15" font-weight="700">docs-agents-private/</text>
-  <text class="t mono" x="352" y="136" font-size="14">PRD.md</text>       <text class="m" x="476" y="136" font-size="13">goals, users</text>
-  <text class="t mono" x="352" y="160" font-size="14">STACK.md</text>     <text class="m" x="476" y="160" font-size="13">tech choices</text>
-  <text class="t mono" x="352" y="184" font-size="14">DECISIONS.md</text> <text class="m" x="476" y="184" font-size="13">what &amp; why</text>
-  <text class="t mono" x="352" y="208" font-size="14">ROADMAP.md</text>   <text class="m" x="476" y="208" font-size="13">what's next</text>
-  <text class="t mono" x="352" y="232" font-size="14">TASKS.md</text>     <text class="m" x="476" y="232" font-size="13">your to-dos</text>
-  <text class="m" x="352" y="256" font-size="13">…</text>
-  <text class="m" x="372" y="258" font-size="12">plain Markdown you can edit</text>
+  <path class="folder" d="M335 62 h86 l14 14 h104 a10 10 0 0 1 10 10 v176 a10 10 0 0 1 -10 10 h-204 a10 10 0 0 1 -10 -10 v-190 a10 10 0 0 1 10 -10z" stroke-width="2"/>
+  <text class="t mono" x="350" y="104" font-size="14" font-weight="700">docs-agents-private/</text>
+  <text class="t mono" x="352" y="136" font-size="14">PRD.md</text>
+  <text class="t mono" x="352" y="160" font-size="14">STACK.md</text>
+  <text class="t mono" x="352" y="184" font-size="14">DECISIONS.md</text>
+  <text class="t mono" x="352" y="208" font-size="14">ROADMAP.md</text>
+  <text class="t mono" x="352" y="232" font-size="14">TASKS.md</text>
+  
+  <text class="m" x="352" y="258" font-size="12">… all plain Markdown</text>
 
   <!-- read arrows -->
-  <path class="arrow" d="M587 160 H600 C612 160 612 92 628 92" marker-end="url(#a)"/>
-  <path class="arrow" d="M600 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
+  <path class="arrow" d="M551 160 H596 C614 160 612 92 628 92" marker-end="url(#a)"/>
+  <path class="arrow" d="M596 160 C612 160 612 222 628 222" marker-end="url(#a)"/>
+  <text class="m" x="555" y="138" font-size="12">reads</text>
+  <text class="m" x="555" y="152" font-size="12">at start</text>
 
   <!-- Later sessions -->
   <text class="m" x="635" y="48" font-size="13" font-weight="600" letter-spacing="1">LATER SESSIONS · ANY AGENT</text>
@@ -74,17 +76,15 @@
   <rect class="card" x="635" y="192" width="225" height="62" rx="10"/>
   <text class="t" x="653" y="218" font-size="16" font-weight="600">Cursor · next week</text>
   <text class="m" x="653" y="239" font-size="13">picks up the next step</text>
-  <text class="m" x="635" y="150" font-size="12">each runs <tspan class="accent mono">agents-control context</tspan></text>
-  <text class="m" x="635" y="168" font-size="12">and reads the saved notes</text>
 
   <!-- Git boundary -->
-  <path class="dash" d="M460 274 V340"/>
-  <g transform="translate(460 306)">
+  <path class="dash" d="M437 274 V340"/>
+  <g transform="translate(437 306)">
     <circle r="14" class="bg"/>
     <rect class="lockbody" x="-7" y="-2" width="14" height="10" rx="2"/>
     <path class="lockshackle" d="M-4 -2 V-5 a4 4 0 0 1 8 0 V-2"/>
   </g>
-  <text class="m" x="482" y="311" font-size="12">excluded via <tspan class="mono">.git/info/exclude</tspan></text>
+  <text class="m" x="459" y="311" font-size="12">excluded via <tspan class="mono">.git/info/exclude</tspan></text>
 
   <rect class="git" x="40" y="344" width="820" height="62" rx="10"/>
   <text class="t" x="60" y="371" font-size="16" font-weight="600">Team repository &amp; Git history</text>

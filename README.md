@@ -3,7 +3,7 @@
 <p align="center">
   <strong>Stop re-explaining your project to every coding agent.</strong><br>
   Keep goals, decisions and next steps in private Markdown beside your code.<br>
-  Claude Code, Codex and Cursor read them. Your team's Git history never sees them.
+  Claude Code, Codex and Cursor read them. Your team's Git history stays clean.
 </p>
 
 <p align="center">
@@ -29,41 +29,60 @@ and why you already ruled out the obvious approach. Switch from Claude Code to
 Codex and you explain it all a third time.
 
 The usual fixes either leak or don't travel. A personal `AGENTS.md` or memory
-bank gets committed, so your half-formed plans show up in code review. Built-in
+bank sits in the repo, one `git add .` away from code review. Built-in
 agent memory stays inside one tool.
 
 ## What agents-control gives you
 
-- **Sessions that build on each other.** A line in your personal agent
-  instructions asks each agent to run `agents-control context` at session start
-  and read the relevant notes. You add to them in one sentence: *"Use ac-decide
-  to record that we chose SQLite for the cache."*
+- **Sessions that build on each other.** Each new session starts by reading
+  your goals, decisions and open tasks. You add to them in one sentence:
+  *"Use ac-decide to record that we chose SQLite for the cache."*
 - **One context for every agent.** Claude Code, Codex and Cursor read the same
-  files, so changing tools doesn't mean starting over.
+  files, so changing tools doesn't mean starting over. Cursor needs a one-time
+  rule paste.
 - **Notes that stay yours.** The folder is listed in `.git/info/exclude`, so
   `git add .` skips it, and `ac-commit` stops if private files are staged. Use it
   in any checkout, including client code and open-source projects, without asking
   anyone to adopt a tool.
 - **Memory you can read.** Plain Markdown you can edit, prune or open in your
-  editor. No database, no server, no network calls: a shell CLI and a set of
-  `ac-` agent skills, installed once per machine.
+  editor. No database, no server, no network calls at runtime: a few hundred
+  lines of shell and a set of `ac-` agent skills, installed once per machine.
 
 ### Why not just keep an ignored notes folder?
 
 You can, and agents-control is not much more than that. It adds the parts you
 would otherwise repeat in every project: an instruction that points each agent
 at the notes, a document structure agents know how to use, skills that keep the
-notes current, and a check before commits.
+notes current, and an `ac-commit` workflow that refuses to commit private files.
 
-| Approach | Out of the team repo | Agents find it | Structure and upkeep |
+| Approach | Out of the team repo | Works across agents | Structure and upkeep |
 | --- | :---: | :---: | :---: |
 | Committed `AGENTS.md` or memory bank | No | Yes | Manual |
-| Built-in agent memory | Yes | One tool only | Automatic, opaque |
+| Built-in agent memory | Yes | No | Automatic, opaque |
 | Ignored folder you set up yourself | Yes | If you tell them | Manual |
-| **agents-control** | **Yes** | **Yes** (Cursor: one-time paste) | **Skills** |
+| **agents-control** | **Yes** | **Yes** | **Templates + `ac-` skills** |
 
-Good to know: notes live in one checkout and are not synced or backed up. A
+**Limitation:** notes live in one checkout and are not synced or backed up. A
 fresh clone on another machine starts empty.
+
+### What a saved decision looks like
+
+You say *"Use ac-decide to record that we chose SQLite for the local cache."*
+The agent appends this to `docs-agents-private/DECISIONS.md`:
+
+```markdown
+### DEC-004 — SQLite for the local cache
+
+Decided by: Author with Agent
+Date: 2026-11-03 14:20
+
+**Decision:** Store the local cache in SQLite.
+
+**Rationale:** We need persistence without running a separate database service.
+```
+
+Next week, before Cursor touches the cache code, it reads this entry and builds
+on the decision instead of proposing Redis.
 
 ## Quickstart
 
