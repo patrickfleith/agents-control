@@ -34,10 +34,8 @@ for your teammates to review. Nobody else needs to install anything.
 
 ## What you get
 
-- **One place for the plan.** Goals, decisions, tasks and ideas live in a few
-  short files instead of many chats.
-- **The same notes for every agent.** Claude Code, Codex and Cursor read the same
-  files, so you can switch tools and keep the same plan.
+- **Keep your plan when switching tools.** Set up Claude Code, Codex or Cursor
+  to use the same notes.
 - **Notes you can read and edit.** They are plain Markdown files. Fix a decision
   or delete an old note in your editor.
 - **Runs locally.** A small command-line tool and a few agent instructions.
@@ -58,15 +56,15 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-When you later ask an agent to build the cache, it reads the decision and uses
-SQLite. If your needs change, use `ac-decide` again to record the new decision.
+Later, ask your agent: *"Build the cache using the decision in my project
+notes."* If your needs change, use `ac-decide` again to record the new decision.
 
 ## Why not keep a notes file myself?
 
 You can. agents-control saves you from setting it up in every project. It
-creates the notes, tells each agent where to find them, and gives agents simple
-commands to keep them up to date. Its commit command, `ac-commit`, checks that
-your notes are not included.
+creates the notes and gives your agents instructions for finding and updating
+them. The `ac-commit` workflow tells your agent to check that no private notes
+are staged before it commits.
 
 Good to know: the notes stay in one folder on one computer. They are not synced
 or backed up.

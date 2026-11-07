@@ -43,7 +43,7 @@
   <!-- Notes -->
   <rect class="notes" x="340" y="30" width="220" height="170" rx="8" stroke-width="1.5"/>
   <text class="t" x="360" y="62" font-size="17" font-weight="600">Project notes</text>
-  <text class="m mono" x="360" y="84" font-size="12">docs-agents-private/</text>
+  <text class="m" x="360" y="84" font-size="13">Plain Markdown files</text>
   <text class="t" x="360" y="114" font-size="14">Goals</text>
   <text class="t" x="360" y="136" font-size="14">Decisions</text>
   <text class="t" x="360" y="158" font-size="14">Tasks</text>
