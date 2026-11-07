@@ -15,9 +15,9 @@ Goals and decisions end up scattered across chats and loose notes. It gets
 hard to see what was decided, why, and what to do next.
 
 agents-control gives you a personal notes folder in each project for goals,
-decisions and planned work. You and your agents read and update the same notes. You set
-the direction and make the decisions. Your agents are told to work from the
-notes and record what changed.
+decisions and planned work. You and your agents read and update the same
+notes. You set the direction and make the decisions. Your agents are told to
+work from the notes and record what changed.
 
 **On your own project**, review the plan before your agent starts and check
 what changed afterward.
@@ -57,13 +57,16 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 ```
 
 Then ask: *"Plan the cache work using SQLite. Wait for my review before coding.
-Record what changed when you're done."* Use `ac-decide` again to revise the decision and record why.
+Record what changed when you're done."*
+
+If your needs change, use `ac-decide` again to revise the decision and record
+why.
 
 ## Why not keep a notes file myself?
 
 You can. agents-control creates a set of notes in each project and gives your
-agents instructions for finding and updating them. The `ac-commit` workflow tells your agent to check that no private notes
-are staged before it commits.
+agents instructions for finding and updating them. The `ac-commit` workflow
+tells your agent to check that no private notes are staged before it commits.
 
 Good to know: the notes stay in one folder on one computer. agents-control does
 not sync or back them up.
