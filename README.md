@@ -1,25 +1,55 @@
-# agents-control
+<h1 align="center">agents-control</h1>
 
-**Keep control of your coding agents and your codebase.**
+<p align="center">
+  <strong>Private project memory for your coding agents.</strong><br>
+  Goals, decisions and next steps in plain Markdown beside your code.<br>
+  Shared by Claude Code, Codex and Cursor. Never committed to Git.
+</p>
 
-Carry your goals, decisions and next steps into the next coding session.
-Pick up where you left off, give different agents the same project context,
-and keep your personal working notes out of the team's Git history.
+<p align="center">
+  <a href="https://github.com/patrickfleith/agents-control/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/patrickfleith/agents-control/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg">
+</p>
 
-A lightweight framework for managing your coding agents' project context.
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#4-use-the-workflows">Workflows</a> ·
+  <a href="#details">How it works</a>
+</p>
 
-[Get started](#quickstart) · [Try a workflow](#4-use-the-workflows) · [Details](#details)
+<p align="center">
+  <img src="docs/images/how-it-works.svg" width="860" alt="Today's Claude Code session saves decisions and next steps to docs-agents-private/. Later sessions in Codex and Cursor read the same notes. The folder is excluded from Git, so the team's history holds no personal notes.">
+</p>
 
-## Make each session build on the last
+## The problem
 
-- **Spend less time explaining the project.** Give your agent saved requirements,
-  technology choices and decisions to read before it starts work.
-- **Keep work moving across sessions.** Record open questions and concrete next
-  steps so you can return to a feature with a clear starting point.
-- **Keep your workflow personal.** Plan work in any Git checkout with local notes
-  and personal skills that preserve the repository's shared setup.
-- **Choose what your agents remember.** Read and edit their project context
-  yourself. Keep useful decisions and discard notes that no longer help.
+Every agent session starts cold. You explain the goal again, the stack again,
+and why you already ruled out the obvious approach. Switch from Claude Code to
+Codex and you explain it all a third time.
+
+The usual fixes have a cost. A long `AGENTS.md` or memory bank lands in the
+team's repository, where your half-formed plans don't belong. Chat history is
+tied to one tool and too long to reread.
+
+## What agents-control gives you
+
+- **Sessions that build on each other.** Your agent starts by reading the
+  requirements, technology choices and decisions you saved last time, then picks
+  up the next step.
+- **One context for every agent.** Claude Code, Codex and Cursor read the same
+  files, so changing tools doesn't mean starting over.
+- **Notes that stay yours.** The folder is listed in `.git/info/exclude`. Use it
+  in any checkout, including client code and open-source projects, without
+  touching the team's files or asking anyone to adopt a tool.
+- **Memory you can read.** Plain Markdown, no database or server. Edit a decision,
+  delete a stale note, or open the files in your editor.
+
+| Approach | Where the context lives | Shared across agents | Stays out of Git |
+| --- | --- | :---: | :---: |
+| Committed `AGENTS.md` / memory bank | In the team repository | ✓ | ✗ |
+| Built-in agent memory | Inside one tool | ✗ | ✓ |
+| **agents-control** | Local Markdown beside your code | ✓ | ✓ |
 
 ## Quickstart
 
