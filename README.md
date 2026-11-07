@@ -14,13 +14,13 @@ Coding agents write code fast. Keeping the work organized is still your job.
 Goals and decisions end up scattered across chats and loose notes. It gets
 hard to see what was decided, why, and what to do next.
 
-agents-control gives each project a small set of notes for this: goals,
-decisions, tasks, ideas and open questions. You and your agents read and update
+agents-control gives each project a folder of notes for goals, decisions and
+planned work. You and your agents read and update
 the same notes. You set the direction and make the decisions. Your agents are told
 to work from the notes and record what changed.
 
-**On your own project**, keep your plan and decisions in one place as you
-switch between agents.
+**On your own project**, the plan and its decisions are written down, so you
+can review them and steer the work.
 
 **In a team repository**, keep personal notes for your part of the work. Setup
 tells Git to ignore the notes folder, so your teammates have no extra files to
@@ -34,8 +34,8 @@ review. Nobody else needs to install anything.
 
 ## What you get
 
-- **Keep your plan when switching tools.** Set up Claude Code, Codex or Cursor
-  to use the same notes.
+- **Use the same notes across tools.** Set up Claude Code, Codex or Cursor to
+  read and update them.
 - **Notes you can read and edit.** They are plain Markdown files. Fix a decision
   or delete an old note in your editor.
 - **Runs locally.** A small command-line tool and a few agent instructions.
@@ -56,8 +56,8 @@ The agent adds this entry (shortened here) to `DECISIONS.md` in your notes folde
 **Rationale:** We don't want to run a separate database server.
 ```
 
-Later, ask your agent: *"Build the cache using this decision, then record what
-changed in my project notes."* If your needs change, ask your agent to use `ac-decide` to revise the decision
+Then ask: *"Plan the cache work around this decision. Let me review the plan
+before you build it. Record what changed when you're done."* If your needs change, ask your agent to use `ac-decide` to revise the decision
 and record why.
 
 ## Why not keep a notes file myself?
